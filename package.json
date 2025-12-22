@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "echo \"No tests specified\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
@@ -16,6 +17,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.11.0",
+    "react-to-print": "^3.2.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
