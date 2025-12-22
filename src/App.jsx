@@ -3,19 +3,46 @@ import { Plus, Search, Loader2, Users } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { ContactCard } from './components/ContactCard';
 import { ContactForm } from './components/ContactForm';
+import { Login } from './components/Login';
 import { useContacts } from './lib/store';
+
+const CREDENTIALS = {
+  admin: { password: 'Warlord@12', role: 'admin' },
+  user: { password: 'CWS$2025', role: 'user' }
+};
 
 function App() {
   const { contacts, loading, isDemo, addContact, updateContact, deleteContact } = useContacts();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [user, setUser] = useState(null);
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.phone?.includes(searchQuery)
   );
+
+  const handleLogin = (username, password) => {
+    const creds = CREDENTIALS[username];
+    if (creds && creds.password === password) {
+      setUser({ username, role: creds.role });
+    } else {
+      throw new Error('Invalid username or password');
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+  };
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  const canEdit = user.role === 'admin';
+  const canDelete = user.role === 'admin';
 
   const handleAdd = () => {
     setEditingContact(null);
@@ -36,7 +63,7 @@ function App() {
   };
 
   return (
-    <Layout isDemo={isDemo}>
+    <Layout isDemo={isDemo} onLogout={handleLogout}>
       {/* Action Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
         <div className="relative w-full sm:w-96">
@@ -73,6 +100,8 @@ function App() {
               contact={contact}
               onEdit={handleEdit}
               onDelete={deleteContact}
+              canEdit={canEdit}
+              canDelete={canDelete}
             />
           ))}
         </div>
