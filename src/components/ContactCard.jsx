@@ -1,17 +1,22 @@
-import { Phone, Mail, MapPin, Trash2, Edit2, User } from 'lucide-react';
+import { Phone, MapPin, Trash2, Edit2, User } from 'lucide-react';
 
 export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete }) {
+    // Construct full address string
+    const fullAddress = [
+        contact.address,
+        contact.city,
+        contact.state,
+        contact.pincode,
+        contact.country
+    ].filter(Boolean).join(', ');
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden group">
             <div className="p-5">
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center border border-gray-200">
-                            {contact.avatar_url ? (
-                                <img src={contact.avatar_url} alt={contact.name} className="h-full w-full object-cover" />
-                            ) : (
-                                <User size={24} className="text-gray-400" />
-                            )}
+                        <div className="h-12 w-12 rounded-full bg-blue-50 overflow-hidden flex items-center justify-center border border-blue-100">
+                            <User size={24} className="text-blue-400" />
                         </div>
                         <div>
                             <h3 className="font-bold text-gray-900 text-lg">{contact.name}</h3>
@@ -43,17 +48,13 @@ export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete }) {
 
                 <div className="mt-6 space-y-3">
                     <div className="flex items-center gap-3 text-gray-600 text-sm">
-                        <Mail size={16} className="text-gray-400" />
-                        <a href={`mailto:${contact.email}`} className="hover:text-blue-600 truncate">{contact.email}</a>
-                    </div>
-                    <div className="flex items-center gap-3 text-gray-600 text-sm">
                         <Phone size={16} className="text-gray-400" />
                         <a href={`tel:${contact.phone}`} className="hover:text-blue-600">{contact.phone}</a>
                     </div>
-                    {contact.address && (
+                    {fullAddress && (
                         <div className="flex items-start gap-3 text-gray-600 text-sm">
                             <MapPin size={16} className="text-gray-400 mt-1 shrink-0" />
-                            <span>{contact.address}</span>
+                            <span>{fullAddress}</span>
                         </div>
                     )}
                 </div>
