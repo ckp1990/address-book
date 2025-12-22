@@ -1,6 +1,6 @@
 import { Phone, Mail, MapPin, Trash2, Edit2, User } from 'lucide-react';
 
-export function ContactCard({ contact, onDelete, onEdit }) {
+export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete }) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden group">
             <div className="p-5">
@@ -20,20 +20,24 @@ export function ContactCard({ contact, onDelete, onEdit }) {
                     </div>
 
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                            onClick={() => onEdit(contact)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit"
-                        >
-                            <Edit2 size={16} />
-                        </button>
-                        <button
-                            onClick={() => onDelete(contact.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
-                        >
-                            <Trash2 size={16} />
-                        </button>
+                        {canEdit && (
+                            <button
+                                onClick={() => onEdit(contact)}
+                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit"
+                            >
+                                <Edit2 size={16} />
+                            </button>
+                        )}
+                        {canDelete && (
+                            <button
+                                onClick={() => onDelete(contact.id)}
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        )}
                     </div>
                 </div>
 

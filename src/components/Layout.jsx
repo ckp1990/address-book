@@ -1,6 +1,7 @@
 import { ConnectionBanner } from './ConnectionBanner';
+import { LogOut } from 'lucide-react';
 
-export function Layout({ children, isDemo }) {
+export function Layout({ children, isDemo, onLogout }) {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <ConnectionBanner isDemo={isDemo} />
@@ -12,6 +13,15 @@ export function Layout({ children, isDemo }) {
                         </div>
                         <h1 className="text-xl font-bold text-gray-900 tracking-tight">Address Book</h1>
                     </div>
+                    {onLogout && (
+                        <button
+                            onClick={onLogout}
+                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                            <LogOut className="h-5 w-5 mr-2" />
+                            Sign out
+                        </button>
+                    )}
                 </div>
             </header>
             <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
