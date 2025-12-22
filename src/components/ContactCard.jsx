@@ -10,6 +10,17 @@ export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete, onS
         contact.country
     ].filter(Boolean).join(', ');
 
+
+export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete }) {
+    // Construct full address string
+    const fullAddress = [
+        contact.address,
+        contact.city,
+        contact.state,
+        contact.pincode,
+        contact.country
+    ].filter(Boolean).join(', ');
+
     return (
         <div className={`bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden group relative ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/10' : 'border-gray-100'}`}>
             {/* Selection Checkbox */}
