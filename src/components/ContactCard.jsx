@@ -1,5 +1,16 @@
 import { Phone, MapPin, Trash2, Edit2, User } from 'lucide-react';
 
+export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete, onSelect, isSelected }) {
+    // Construct full address string
+    const fullAddress = [
+        contact.address,
+        contact.city,
+        contact.state,
+        contact.pincode,
+        contact.country
+    ].filter(Boolean).join(', ');
+
+
 export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete }) {
     // Construct full address string
     const fullAddress = [
@@ -11,7 +22,17 @@ export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete }) {
     ].filter(Boolean).join(', ');
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden group">
+        <div className={`bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden group relative ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/10' : 'border-gray-100'}`}>
+            {/* Selection Checkbox */}
+            <div className="absolute top-4 right-4 z-10">
+                <input
+                    type="checkbox"
+                    checked={isSelected || false}
+                    onChange={(e) => onSelect(contact.id, e.target.checked)}
+                    className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                />
+            </div>
+
             <div className="p-5">
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-4">
@@ -24,7 +45,7 @@ export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete }) {
                         </div>
                     </div>
 
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-8">
                         {canEdit && (
                             <button
                                 onClick={() => onEdit(contact)}

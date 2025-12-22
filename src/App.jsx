@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { Plus, Search, Loader2, Users } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, Search, Loader2, Users, Printer } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
 import { Layout } from './components/Layout';
 import { ContactCard } from './components/ContactCard';
 import { ContactForm } from './components/ContactForm';
+import { PrintableLabel } from './components/PrintableLabel';
 import { Login } from './components/Login';
 import { useContacts } from './lib/store';
 
@@ -17,12 +19,38 @@ function App() {
   const [editingContact, setEditingContact] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
+  const [selectedContactIds, setSelectedContactIds] = useState(new Set());
+  const printComponentRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    contentRef: printComponentRef,
+    documentTitle: 'Contact-Labels',
+  });
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.phone?.includes(searchQuery)
   );
+
+  const handleSelect = (id, isSelected) => {
+    const newSelected = new Set(selectedContactIds);
+    if (isSelected) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedContactIds(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedContactIds.size === filteredContacts.length) {
+      setSelectedContactIds(new Set());
+    } else {
+      setSelectedContactIds(new Set(filteredContacts.map(c => c.id)));
+    }
+  };
+
+  const selectedContacts = contacts.filter(c => selectedContactIds.has(c.id));
 
   const handleLogin = (username, password) => {
     const creds = CREDENTIALS[username];
@@ -78,13 +106,33 @@ function App() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button
-          onClick={handleAdd}
-          className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all hover:scale-[1.02]"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          New Contact
-        </button>
+        <div className="flex gap-3 w-full sm:w-auto">
+          {selectedContactIds.size > 0 && (
+            <button
+              onClick={handlePrint}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+            >
+              <Printer className="mr-2 h-5 w-5" />
+              Print ({selectedContactIds.size})
+            </button>
+          )}
+          <button
+            onClick={handleAdd}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all hover:scale-[1.02]"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            New Contact
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-end mb-4">
+          <button
+            onClick={handleSelectAll}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            {selectedContactIds.size === filteredContacts.length ? 'Deselect All' : 'Select All'}
+          </button>
       </div>
 
       {/* Content Area */}
@@ -102,6 +150,8 @@ function App() {
               onDelete={deleteContact}
               canEdit={canEdit}
               canDelete={canDelete}
+              onSelect={handleSelect}
+              isSelected={selectedContactIds.has(contact.id)}
             />
           ))}
         </div>
@@ -134,6 +184,13 @@ function App() {
         onSubmit={handleSubmit}
         initialData={editingContact}
       />
+
+      <div style={{ display: 'none' }}>
+        <PrintableLabel
+          ref={printComponentRef}
+          contacts={selectedContacts}
+        />
+      </div>
     </Layout>
   );
 }
