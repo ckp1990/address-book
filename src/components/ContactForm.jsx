@@ -48,7 +48,7 @@ export function ContactForm({ isOpen, onClose, onSubmit, initialData = null }) {
             onClose();
         } catch (error) {
             console.error(error);
-            alert('Failed to save contact');
+            alert(`Failed to save contact: ${error.message || 'Unknown error'}`);
         } finally {
             setLoading(false);
         }
