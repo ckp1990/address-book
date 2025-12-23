@@ -1,6 +1,6 @@
 import { AlertTriangle, Database } from 'lucide-react';
 
-export function ConnectionBanner({ isDemo }) {
+export function ConnectionBanner({ isDemo, onSetupClick }) {
     if (!isDemo) return null;
 
     return (
@@ -17,14 +17,12 @@ export function ConnectionBanner({ isDemo }) {
                         </p>
                     </div>
                 </div>
-                <a
-                    href="https://supabase.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                <button
+                    onClick={onSetupClick}
+                    className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 underline decoration-indigo-300 underline-offset-2"
                 >
                     Setup Supabase &rarr;
-                </a>
+                </button>
             </div>
         </div>
     );
