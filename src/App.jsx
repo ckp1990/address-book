@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
-import { Plus, Search, Loader2, Users, Printer } from 'lucide-react';
+import { Plus, Search, Loader2, Users, Printer, Settings } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { Layout } from './components/Layout';
 import { ContactCard } from './components/ContactCard';
 import { ContactForm } from './components/ContactForm';
 import { PrintableLabel } from './components/PrintableLabel';
+import { SettingsModal } from './components/SettingsModal';
 import { Login } from './components/Login';
 import { useContacts } from './lib/store';
 
@@ -16,6 +17,7 @@ const CREDENTIALS = {
 function App() {
   const { contacts, loading, isDemo, addContact, updateContact, deleteContact } = useContacts();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
@@ -91,7 +93,7 @@ function App() {
   };
 
   return (
-    <Layout isDemo={isDemo} onLogout={handleLogout}>
+    <Layout isDemo={isDemo} onLogout={handleLogout} onSetupClick={() => setIsSettingsOpen(true)}>
       {/* Action Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
         <div className="relative w-full sm:w-96">
@@ -116,6 +118,12 @@ function App() {
               Print ({selectedContactIds.size})
             </button>
           )}
+           <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
           <button
             onClick={handleAdd}
             className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all hover:scale-[1.02]"
@@ -183,6 +191,11 @@ function App() {
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleSubmit}
         initialData={editingContact}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
 
       <div style={{ display: 'none' }}>
