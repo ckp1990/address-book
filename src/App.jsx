@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
-import { Plus, Search, Loader2, Users, Printer, Settings } from 'lucide-react';
+import { Plus, Search, Loader2, Users, Printer, Settings, Eye } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { Layout } from './components/Layout';
 import { ContactCard } from './components/ContactCard';
 import { ContactForm } from './components/ContactForm';
 import { PrintableLabel } from './components/PrintableLabel';
 import { SettingsModal } from './components/SettingsModal';
+import { PreviewModal } from './components/PreviewModal';
 import { Login } from './components/Login';
 import { useContacts } from './lib/store';
 
@@ -14,19 +15,27 @@ const CREDENTIALS = {
   user: { password: 'CWS$2025', role: 'user' }
 };
 
+const PAGE_SIZES = ['A3', 'A4', 'A5', 'Letter', 'Legal'];
+const ORIENTATIONS = ['portrait', 'landscape'];
+
 function App() {
   const { contacts, loading, isDemo, addContact, updateContact, deleteContact } = useContacts();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
   const [selectedContactIds, setSelectedContactIds] = useState(new Set());
+  const [pageSize, setPageSize] = useState('A5');
+  const [orientation, setOrientation] = useState('landscape');
+
   const printComponentRef = useRef();
 
   const handlePrint = useReactToPrint({
     contentRef: printComponentRef,
     documentTitle: 'Contact-Labels',
+    onAfterPrint: () => setIsPreviewOpen(false),
   });
 
   const filteredContacts = contacts.filter(contact =>
@@ -108,15 +117,49 @@ function App() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-3 w-full sm:w-auto justify-end">
           {selectedContactIds.size > 0 && (
-            <button
-              onClick={handlePrint}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
-            >
-              <Printer className="mr-2 h-5 w-5" />
-              Print ({selectedContactIds.size})
-            </button>
+            <>
+              {/* Page Size Dropdown */}
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(e.target.value)}
+                className="block w-full sm:w-auto pl-3 pr-8 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg shadow-sm"
+              >
+                {PAGE_SIZES.map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+
+              {/* Orientation Dropdown */}
+              <select
+                value={orientation}
+                onChange={(e) => setOrientation(e.target.value)}
+                className="block w-full sm:w-auto pl-3 pr-8 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg shadow-sm capitalize"
+              >
+                {ORIENTATIONS.map(o => (
+                  <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>
+                ))}
+              </select>
+
+              {/* Preview Button */}
+              <button
+                onClick={() => setIsPreviewOpen(true)}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+              >
+                <Eye className="mr-2 h-5 w-5" />
+                Preview
+              </button>
+
+              {/* Print Button */}
+              <button
+                onClick={handlePrint}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+              >
+                <Printer className="mr-2 h-5 w-5" />
+                Print ({selectedContactIds.size})
+              </button>
+            </>
           )}
            <button
             onClick={() => setIsSettingsOpen(true)}
@@ -198,10 +241,21 @@ function App() {
         onClose={() => setIsSettingsOpen(false)}
       />
 
+      <PreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        contacts={selectedContacts}
+        pageSize={pageSize}
+        orientation={orientation}
+        onPrint={handlePrint}
+      />
+
       <div style={{ display: 'none' }}>
         <PrintableLabel
           ref={printComponentRef}
           contacts={selectedContacts}
+          pageSize={pageSize}
+          orientation={orientation}
         />
       </div>
     </Layout>

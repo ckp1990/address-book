@@ -1,12 +1,12 @@
 import React from 'react';
 
-export const PrintableLabel = React.forwardRef(({ contacts }, ref) => {
+export const PrintableLabel = React.forwardRef(({ contacts, pageSize = 'A5', orientation = 'landscape' }, ref) => {
     return (
         <div ref={ref} className="p-8 bg-white">
             <style type="text/css" media="print">
                 {`
                     @page {
-                        size: A5;
+                        size: ${pageSize} ${orientation};
                         margin: 0;
                     }
                     body {
