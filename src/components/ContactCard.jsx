@@ -1,15 +1,7 @@
 import { Phone, MapPin, Trash2, Edit2, User } from 'lucide-react';
+import { formatAddress } from '../lib/utils';
 
 export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete, onSelect, isSelected }) {
-    // Construct full address string
-    const fullAddress = [
-        contact.address,
-        contact.city,
-        contact.state,
-        contact.pincode,
-        contact.country
-    ].filter(Boolean).join(', ');
-
     return (
         <div className={`bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden group relative ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/10' : 'border-gray-100'}`}>
             {/* Selection Checkbox */}
@@ -61,12 +53,15 @@ export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete, onS
                         <Phone size={16} className="text-gray-400" />
                         <a href={`tel:${contact.phone}`} className="hover:text-blue-600">{contact.phone}</a>
                     </div>
-                    {fullAddress && (
-                        <div className="flex items-start gap-3 text-gray-600 text-sm">
-                            <MapPin size={16} className="text-gray-400 mt-1 shrink-0" />
-                            <span>{fullAddress}</span>
+                    <div className="flex items-start gap-3 text-gray-600 text-sm">
+                        <MapPin size={16} className="text-gray-400 mt-1 shrink-0" />
+                        <div>
+                            {formatAddress(contact.address)}
+                            <span>
+                                {[contact.city, contact.state, contact.pincode, contact.country].filter(Boolean).join(', ')}
+                            </span>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>
