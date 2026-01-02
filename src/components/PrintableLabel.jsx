@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatAddress } from '../lib/utils';
 
 export const PrintableLabel = React.forwardRef(({ contacts, pageSize = 'A5', orientation = 'landscape' }, ref) => {
     return (
@@ -27,7 +28,9 @@ export const PrintableLabel = React.forwardRef(({ contacts, pageSize = 'A5', ori
                         </h1>
 
                         <div className="text-xl leading-relaxed space-y-1">
-                            <p className="font-medium">{contact.address}</p>
+                            <div className="font-medium">
+                                {formatAddress(contact.address)}
+                            </div>
                             <p>{contact.city}, {contact.state}</p>
                             <p>{contact.country} - <span className="font-bold">{contact.pincode}</span></p>
                         </div>

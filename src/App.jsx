@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { Plus, Search, Loader2, Users, Printer, Settings, Eye } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { Layout } from './components/Layout';
@@ -59,6 +60,10 @@ function App() {
     } else {
       setSelectedContactIds(new Set(filteredContacts.map(c => c.id)));
     }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedContactIds(new Set());
   };
 
   const selectedContacts = contacts.filter(c => selectedContactIds.has(c.id));
@@ -141,6 +146,15 @@ function App() {
                   <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>
                 ))}
               </select>
+
+              {/* Clear Selection Button */}
+              <button
+                onClick={handleClearSelection}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+                title="Clear Selection"
+              >
+                <X className="h-5 w-5" />
+              </button>
 
               {/* Preview Button */}
               <button
