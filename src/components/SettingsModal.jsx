@@ -11,6 +11,7 @@ export function SettingsModal({ isOpen, onClose }) {
     if (isOpen) {
       const storedUrl = localStorage.getItem('custom_supabase_url') || '';
       const storedKey = localStorage.getItem('custom_supabase_key') || '';
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUrl(storedUrl);
       setKey(storedKey);
       setIsCustom(isUsingCustomCredentials());

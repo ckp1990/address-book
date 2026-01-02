@@ -12,33 +12,33 @@ export function useContacts() {
     const isDemo = !supabase;
 
     useEffect(() => {
-        fetchContacts();
-    }, []);
+        async function fetchContacts() {
+            setLoading(true);
+            try {
+                if (isDemo) {
+                    // Load from LocalStorage
+                    const localData = JSON.parse(localStorage.getItem('demo_contacts') || '[]');
+                    setContacts(localData);
+                } else {
+                    // Load from Supabase
+                    const { data, error } = await supabase
+                        .from('contacts')
+                        .select('*')
+                        .order('created_at', { ascending: false });
 
-    async function fetchContacts() {
-        setLoading(true);
-        try {
-            if (isDemo) {
-                // Load from LocalStorage
-                const localData = JSON.parse(localStorage.getItem('demo_contacts') || '[]');
-                setContacts(localData);
-            } else {
-                // Load from Supabase
-                const { data, error } = await supabase
-                    .from('contacts')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                setContacts(data || []);
+                    if (error) throw error;
+                    setContacts(data || []);
+                }
+            } catch (err) {
+                console.error('Error fetching contacts:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
             }
-        } catch (err) {
-            console.error('Error fetching contacts:', err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
         }
-    }
+
+        fetchContacts();
+    }, [isDemo]);
 
     async function addContact(contact) {
         try {

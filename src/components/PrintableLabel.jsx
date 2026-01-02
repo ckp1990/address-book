@@ -16,7 +16,7 @@ export const PrintableLabel = React.forwardRef(({ contacts, pageSize = 'A5', ori
                 `}
             </style>
 
-            {contacts.map((contact, index) => (
+            {contacts.map((contact) => (
                 <div
                     key={contact.id}
                     className="mb-8 border-2 border-gray-800 p-8 rounded-xl break-inside-avoid page-break-after-always"
