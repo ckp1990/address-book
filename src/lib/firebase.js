@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
-import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 /**
  * Reads Firebase configuration from LocalStorage.
@@ -38,13 +38,42 @@ if (config) {
         db = getFirestore(app);
         auth = getAuth(app);
 
-        // Sign in anonymously to allow access if rules require auth
+        // Start authentication process immediately
         signInAnonymously(auth).catch((error) => {
             console.error("Error signing in anonymously:", error);
         });
     } catch (e) {
         console.error("Error initializing Firebase:", e);
     }
+}
+
+/**
+ * Ensures the user is authenticated before performing operations.
+ * Returns a promise that resolves to the user object.
+ */
+export async function ensureAuth() {
+    if (!auth) return null;
+    if (auth.currentUser) return auth.currentUser;
+
+    return new Promise((resolve, reject) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                unsubscribe();
+                resolve(user);
+            } else {
+                // Not signed in, attempt sign in again if needed, or wait for the initial sign-in to fail/succeed
+                // Since we call signInAnonymously on load, we just wait.
+                // But if it fails, onAuthStateChanged might not fire with a user.
+                // So we can try to sign in again here to be safe and catch errors.
+                signInAnonymously(auth).then((u) => {
+                   // onAuthStateChanged will fire
+                }).catch((error) => {
+                   unsubscribe();
+                   reject(new Error("Authentication failed. Please enable 'Anonymous' sign-in method in Firebase Console -> Authentication."));
+                });
+            }
+        });
+    });
 }
 
 /**
