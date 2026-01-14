@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from './firebase';
+import { db, ensureAuth } from './firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 
 /**
@@ -25,10 +25,8 @@ export function useContacts() {
                 setContacts(localData);
             } else {
                 // Load from Firebase
+                await ensureAuth();
                 const contactsRef = collection(db, 'contacts');
-                // Note: Firestore doesn't automatically sort by created_at unless we have an index
-                // For simplicity/small data, we can sort client-side or add orderBy if index exists.
-                // We'll try to orderBy created_at descending. If it fails due to missing index, we catch it.
 
                 try {
                     const q = query(contactsRef, orderBy('created_at', 'desc'));
@@ -70,6 +68,7 @@ export function useContacts() {
                 localStorage.setItem('demo_contacts', JSON.stringify(updated));
                 return newContact;
             } else {
+                await ensureAuth();
                 const docRef = await addDoc(collection(db, 'contacts'), newContactData);
                 const savedContact = { id: docRef.id, ...newContactData };
                 setContacts([savedContact, ...contacts]);
@@ -88,6 +87,7 @@ export function useContacts() {
                 setContacts(updated);
                 localStorage.setItem('demo_contacts', JSON.stringify(updated));
             } else {
+                await ensureAuth();
                 await deleteDoc(doc(db, 'contacts', id));
                 setContacts(contacts.filter(c => c.id !== id));
             }
@@ -104,6 +104,7 @@ export function useContacts() {
                 setContacts(updated);
                 localStorage.setItem('demo_contacts', JSON.stringify(updated));
             } else {
+                await ensureAuth();
                 const contactRef = doc(db, 'contacts', id);
                 await updateDoc(contactRef, updates);
                 setContacts(contacts.map(c => c.id === id ? { ...c, ...updates } : c));

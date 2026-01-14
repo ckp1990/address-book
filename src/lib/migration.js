@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { db } from './firebase';
+import { db, ensureAuth } from './firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
 /**
@@ -16,6 +16,9 @@ export async function migrateData(supabaseUrl, supabaseKey, onProgress) {
     }
 
     try {
+        onProgress("Authenticating with Firebase...");
+        await ensureAuth();
+
         onProgress("Connecting to Supabase...");
         const supabase = createClient(supabaseUrl, supabaseKey);
 
