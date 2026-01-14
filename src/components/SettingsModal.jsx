@@ -1,19 +1,39 @@
 import { useState, useEffect } from 'react';
-import { X, Save, RotateCcw, Database } from 'lucide-react';
-import { saveConnectionDetails, clearConnectionDetails, isUsingCustomCredentials } from '../lib/supabase';
+import { X, Save, RotateCcw, Database, CloudUpload } from 'lucide-react';
+import { saveFirebaseConfig, clearFirebaseConfig, isFirebaseConfigured } from '../lib/firebase';
+import { migrateData } from '../lib/migration';
 
 export function SettingsModal({ isOpen, onClose }) {
-  const [url, setUrl] = useState('');
-  const [key, setKey] = useState('');
-  const [isCustom, setIsCustom] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const [appId, setAppId] = useState('');
+  const [authDomain, setAuthDomain] = useState('');
+  const [storageBucket, setStorageBucket] = useState('');
+  const [messagingSenderId, setMessagingSenderId] = useState('');
+
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [activeTab, setActiveTab] = useState('config'); // 'config' or 'migrate'
+
+  // Migration State
+  const [supaUrl, setSupaUrl] = useState('');
+  const [supaKey, setSupaKey] = useState('');
+  const [migrationStatus, setMigrationStatus] = useState('');
+  const [isMigrating, setIsMigrating] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      const storedUrl = localStorage.getItem('custom_supabase_url') || '';
-      const storedKey = localStorage.getItem('custom_supabase_key') || '';
-      setUrl(storedUrl);
-      setKey(storedKey);
-      setIsCustom(isUsingCustomCredentials());
+      setApiKey(localStorage.getItem('firebase_api_key') || '');
+      setProjectId(localStorage.getItem('firebase_project_id') || '');
+      setAppId(localStorage.getItem('firebase_app_id') || '');
+      setAuthDomain(localStorage.getItem('firebase_auth_domain') || '');
+      setStorageBucket(localStorage.getItem('firebase_storage_bucket') || '');
+      setMessagingSenderId(localStorage.getItem('firebase_messaging_sender_id') || '');
+
+      setIsConfigured(isFirebaseConfigured());
+
+      // Pre-fill old Supabase credentials if they exist in storage
+      setSupaUrl(localStorage.getItem('custom_supabase_url') || '');
+      setSupaKey(localStorage.getItem('custom_supabase_key') || '');
     }
   }, [isOpen]);
 
@@ -21,14 +41,51 @@ export function SettingsModal({ isOpen, onClose }) {
 
   const handleSave = (e) => {
     e.preventDefault();
-    if (url && key) {
-      saveConnectionDetails(url, key);
+    try {
+        saveFirebaseConfig({
+            apiKey,
+            projectId,
+            appId,
+            authDomain,
+            storageBucket,
+            messagingSenderId
+        });
+    } catch (e) {
+        alert(e.message);
     }
   };
 
   const handleReset = () => {
-    if (confirm('Are you sure you want to disconnect your custom Supabase database?')) {
-      clearConnectionDetails();
+    if (confirm('Are you sure you want to disconnect Firebase and return to Demo Mode?')) {
+      clearFirebaseConfig();
+    }
+  };
+
+  const handleMigrate = async (e) => {
+    e.preventDefault();
+    if (!supaUrl || !supaKey) {
+        alert("Please provide Supabase URL and Key.");
+        return;
+    }
+    if (!isConfigured) {
+        alert("Please configure and save Firebase settings first.");
+        return;
+    }
+
+    if (!confirm("This will copy contacts from Supabase to Firebase. Continue?")) return;
+
+    setIsMigrating(true);
+    setMigrationStatus("Starting...");
+
+    try {
+        const result = await migrateData(supaUrl, supaKey, (msg) => setMigrationStatus(msg));
+        alert(`${result.message} (${result.count} contacts imported)`);
+        setMigrationStatus("Done!");
+    } catch (err) {
+        setMigrationStatus(`Error: ${err.message}`);
+        alert(`Migration failed: ${err.message}`);
+    } finally {
+        setIsMigrating(false);
     }
   };
 
@@ -58,67 +115,103 @@ export function SettingsModal({ isOpen, onClose }) {
               <Database className="h-6 w-6 text-blue-600" />
             </div>
             <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Database Connection Settings
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                Database Settings
               </h3>
-              <div className="mt-2">
-                <p className="text-sm text-gray-500 mb-4">
-                  Connect your own Supabase project to sync your contacts to the cloud.
-                </p>
 
-                <form onSubmit={handleSave} className="space-y-4">
-                  <div>
-                    <label htmlFor="url" className="block text-sm font-medium text-gray-700">
-                      Supabase URL
-                    </label>
-                    <input
-                      type="text"
-                      id="url"
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      placeholder="https://your-project.supabase.co"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="key" className="block text-sm font-medium text-gray-700">
-                      Supabase Anon Key
-                    </label>
-                    <input
-                      type="password"
-                      id="key"
-                      value={key}
-                      onChange={(e) => setKey(e.target.value)}
-                      placeholder="your-anon-key"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-2">
-                    <button
-                      type="submit"
-                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      Save & Connect
-                    </button>
-
-                    {isCustom && (
-                        <button
-                        type="button"
-                        onClick={handleReset}
-                        className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
-                        >
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        Reset to Defaults
-                        </button>
-                    )}
-                  </div>
-                </form>
+              <div className="flex border-b border-gray-200 mb-4">
+                  <button
+                    className={`flex-1 py-2 text-sm font-medium ${activeTab === 'config' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    onClick={() => setActiveTab('config')}
+                  >
+                    Connection
+                  </button>
+                  <button
+                    className={`flex-1 py-2 text-sm font-medium ${activeTab === 'migrate' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    onClick={() => setActiveTab('migrate')}
+                  >
+                    Migration Tool
+                  </button>
               </div>
+
+              {activeTab === 'config' ? (
+                  <form onSubmit={handleSave} className="space-y-4">
+                    <p className="text-sm text-gray-500">
+                      Enter your Firebase Project configuration.
+                    </p>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700">API Key *</label>
+                        <input type="text" required value={apiKey} onChange={e => setApiKey(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700">Project ID *</label>
+                        <input type="text" required value={projectId} onChange={e => setProjectId(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700">App ID *</label>
+                        <input type="text" required value={appId} onChange={e => setAppId(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 sm:text-sm" />
+                    </div>
+                    {/* Optional Fields hidden in details or just shown */}
+                    <details className="text-xs text-gray-500">
+                        <summary className="cursor-pointer mb-2">Advanced (Optional)</summary>
+                        <div className="space-y-2">
+                             <div>
+                                <label className="block text-xs font-medium text-gray-700">Auth Domain</label>
+                                <input type="text" value={authDomain} onChange={e => setAuthDomain(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 sm:text-sm" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700">Storage Bucket</label>
+                                <input type="text" value={storageBucket} onChange={e => setStorageBucket(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 sm:text-sm" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700">Messaging Sender ID</label>
+                                <input type="text" value={messagingSenderId} onChange={e => setMessagingSenderId(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 sm:text-sm" />
+                            </div>
+                        </div>
+                    </details>
+
+                    <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-2">
+                        <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            <Save className="mr-2 h-4 w-4" /> Save
+                        </button>
+                        {isConfigured && (
+                            <button type="button" onClick={handleReset} className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm">
+                                <RotateCcw className="mr-2 h-4 w-4" /> Reset
+                            </button>
+                        )}
+                    </div>
+                  </form>
+              ) : (
+                  <div className="space-y-4">
+                      <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200 text-xs text-yellow-800">
+                          Use this to copy data from your old Supabase project to your new Firebase project.
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700">Old Supabase URL</label>
+                        <input type="text" value={supaUrl} onChange={e => setSupaUrl(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 sm:text-sm" placeholder="https://..." />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700">Old Supabase Key</label>
+                        <input type="password" value={supaKey} onChange={e => setSupaKey(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 sm:text-sm" placeholder="ey..." />
+                    </div>
+
+                    {migrationStatus && (
+                        <div className="text-sm font-mono bg-gray-100 p-2 rounded text-blue-600">
+                            {migrationStatus}
+                        </div>
+                    )}
+
+                    <button
+                        onClick={handleMigrate}
+                        disabled={isMigrating}
+                        className={`w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white sm:text-sm ${isMigrating ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
+                    >
+                        <CloudUpload className="mr-2 h-4 w-4" />
+                        {isMigrating ? 'Migrating...' : 'Start Migration'}
+                    </button>
+                  </div>
+              )}
+
             </div>
           </div>
         </div>
