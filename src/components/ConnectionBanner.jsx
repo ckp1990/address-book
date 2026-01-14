@@ -13,7 +13,7 @@ export function ConnectionBanner({ isDemo, onSetupClick }) {
                     <div>
                         <h3 className="font-semibold text-indigo-900">Demo Mode Active</h3>
                         <p className="text-sm text-indigo-700">
-                            Data is saved to your browser (Local Storage). Connect Supabase to save to the cloud.
+                            Data is saved to your browser (Local Storage). Connect Firebase to save to the cloud.
                         </p>
                     </div>
                 </div>
@@ -21,7 +21,7 @@ export function ConnectionBanner({ isDemo, onSetupClick }) {
                     onClick={onSetupClick}
                     className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 underline decoration-indigo-300 underline-offset-2"
                 >
-                    Setup Supabase &rarr;
+                    Setup Firebase &rarr;
                 </button>
             </div>
         </div>

@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { supabase } from './supabase';
+import { db, ensureAuth } from './firebase';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 
 /**
  * Custom hook to manage contacts.
- * Automatically switches between LocalStorage (Demo) and Supabase (Prod).
+ * Automatically switches between LocalStorage (Demo) and Firebase (Prod).
  */
 export function useContacts() {
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const isDemo = !supabase;
+    const isDemo = !db;
 
     useEffect(() => {
         fetchContacts();
@@ -23,14 +24,24 @@ export function useContacts() {
                 const localData = JSON.parse(localStorage.getItem('demo_contacts') || '[]');
                 setContacts(localData);
             } else {
-                // Load from Supabase
-                const { data, error } = await supabase
-                    .from('contacts')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                // Load from Firebase
+                await ensureAuth();
+                const contactsRef = collection(db, 'contacts');
 
-                if (error) throw error;
-                setContacts(data || []);
+                try {
+                    const q = query(contactsRef, orderBy('created_at', 'desc'));
+                    const querySnapshot = await getDocs(q);
+                    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setContacts(data);
+                } catch (idxError) {
+                    console.warn("Index missing or error, fetching without sort:", idxError);
+                    // Fallback to unsorted fetch
+                    const querySnapshot = await getDocs(contactsRef);
+                    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // Client-side sort
+                    data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    setContacts(data);
+                }
             }
         } catch (err) {
             console.error('Error fetching contacts:', err);
@@ -42,26 +53,26 @@ export function useContacts() {
 
     async function addContact(contact) {
         try {
+            const newContactData = {
+                ...contact,
+                created_at: new Date().toISOString()
+            };
+
             if (isDemo) {
                 const newContact = {
                     id: crypto.randomUUID(),
-                    created_at: new Date().toISOString(),
-                    ...contact
+                    ...newContactData
                 };
                 const updated = [newContact, ...contacts];
                 setContacts(updated);
                 localStorage.setItem('demo_contacts', JSON.stringify(updated));
                 return newContact;
             } else {
-                const { data, error } = await supabase
-                    .from('contacts')
-                    .insert([contact])
-                    .select()
-                    .single();
-
-                if (error) throw error;
-                setContacts([data, ...contacts]);
-                return data;
+                await ensureAuth();
+                const docRef = await addDoc(collection(db, 'contacts'), newContactData);
+                const savedContact = { id: docRef.id, ...newContactData };
+                setContacts([savedContact, ...contacts]);
+                return savedContact;
             }
         } catch (err) {
             setError(err.message);
@@ -76,11 +87,8 @@ export function useContacts() {
                 setContacts(updated);
                 localStorage.setItem('demo_contacts', JSON.stringify(updated));
             } else {
-                const { error } = await supabase
-                    .from('contacts')
-                    .delete()
-                    .eq('id', id);
-                if (error) throw error;
+                await ensureAuth();
+                await deleteDoc(doc(db, 'contacts', id));
                 setContacts(contacts.filter(c => c.id !== id));
             }
         } catch (err) {
@@ -96,14 +104,10 @@ export function useContacts() {
                 setContacts(updated);
                 localStorage.setItem('demo_contacts', JSON.stringify(updated));
             } else {
-                const { data, error } = await supabase
-                    .from('contacts')
-                    .update(updates)
-                    .eq('id', id)
-                    .select()
-                    .single();
-                if (error) throw error;
-                setContacts(contacts.map(c => c.id === id ? data : c));
+                await ensureAuth();
+                const contactRef = doc(db, 'contacts', id);
+                await updateDoc(contactRef, updates);
+                setContacts(contacts.map(c => c.id === id ? { ...c, ...updates } : c));
             }
         } catch (err) {
             setError(err.message);
