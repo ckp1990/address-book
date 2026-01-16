@@ -1,6 +1,14 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import {
+    getAuth,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    sendEmailVerification,
+    signOut
+} from 'firebase/auth';
 
 /**
  * Reads Firebase configuration from LocalStorage.
@@ -37,11 +45,6 @@ if (config) {
         app = initializeApp(config);
         db = getFirestore(app);
         auth = getAuth(app);
-
-        // Start authentication process immediately
-        signInAnonymously(auth).catch((error) => {
-            console.error("Error signing in anonymously:", error);
-        });
     } catch (e) {
         console.error("Error initializing Firebase:", e);
     }
@@ -55,23 +58,10 @@ export async function ensureAuth() {
     if (!auth) return null;
     if (auth.currentUser) return auth.currentUser;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                unsubscribe();
-                resolve(user);
-            } else {
-                // Not signed in, attempt sign in again if needed, or wait for the initial sign-in to fail/succeed
-                // Since we call signInAnonymously on load, we just wait.
-                // But if it fails, onAuthStateChanged might not fire with a user.
-                // So we can try to sign in again here to be safe and catch errors.
-                signInAnonymously(auth).then((u) => {
-                   // onAuthStateChanged will fire
-                }).catch((error) => {
-                   unsubscribe();
-                   reject(new Error("Authentication failed. Please enable 'Anonymous' sign-in method in Firebase Console -> Authentication."));
-                });
-            }
+            unsubscribe();
+            resolve(user);
         });
     });
 }
@@ -114,4 +104,12 @@ export function isFirebaseConfigured() {
     return !!db;
 }
 
-export { db, auth };
+export {
+    db,
+    auth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    sendEmailVerification,
+    signOut
+};
