@@ -1,8 +1,9 @@
 import { ConnectionBanner } from './ConnectionBanner';
+import { LogOut, Users } from 'lucide-react';
 import { LogOut } from 'lucide-react';
 import logo from '../assets/logo.png';
 
-export function Layout({ children, isDemo, onLogout, onSetupClick }) {
+export function Layout({ children, isDemo, onLogout, onSetupClick, onUserManagementClick, isAdmin }) {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <ConnectionBanner isDemo={isDemo} onSetupClick={onSetupClick} />
@@ -13,13 +14,25 @@ export function Layout({ children, isDemo, onLogout, onSetupClick }) {
                         <h1 className="text-xl font-bold text-gray-900 tracking-tight">Address Label Printer</h1>
                     </div>
                     {onLogout && (
-                        <button
-                            onClick={onLogout}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                        >
-                            <LogOut className="h-5 w-5 mr-2" />
-                            Sign out
-                        </button>
+                        <div className="flex items-center gap-2">
+                             {isAdmin && (
+                                <button
+                                    onClick={onUserManagementClick}
+                                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                    title="Manage Users"
+                                >
+                                    <Users className="h-5 w-5 mr-2 text-blue-600" />
+                                    Users
+                                </button>
+                            )}
+                            <button
+                                onClick={onLogout}
+                                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                                <LogOut className="h-5 w-5 mr-2" />
+                                Sign out
+                            </button>
+                        </div>
                     )}
                 </div>
             </header>

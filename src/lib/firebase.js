@@ -1,5 +1,14 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import {
+    getAuth,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    sendEmailVerification,
+    signOut
+} from 'firebase/auth';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 /**
@@ -37,11 +46,6 @@ if (config) {
         app = initializeApp(config);
         db = getFirestore(app);
         auth = getAuth(app);
-
-        // Start authentication process immediately
-        signInAnonymously(auth).catch((error) => {
-            console.error("Error signing in anonymously:", error);
-        });
     } catch (e) {
         console.error("Error initializing Firebase:", e);
     }
@@ -55,8 +59,10 @@ export async function ensureAuth() {
     if (!auth) return null;
     if (auth.currentUser) return auth.currentUser;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe();
+            resolve(user);
             if (user) {
                 unsubscribe();
                 resolve(user);
@@ -114,4 +120,12 @@ export function isFirebaseConfigured() {
     return !!db;
 }
 
-export { db, auth };
+export {
+    db,
+    auth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    sendEmailVerification,
+    signOut
+};

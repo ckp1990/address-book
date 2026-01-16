@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { Layout } from './components/Layout';
@@ -7,28 +7,77 @@ import { ContactForm } from './components/ContactForm';
 import { PrintableLabel } from './components/PrintableLabel';
 import { SettingsModal } from './components/SettingsModal';
 import { PreviewModal } from './components/PreviewModal';
+import { UserManagement } from './components/UserManagement';
 import { Login } from './components/Login';
+import { SetupAdmin } from './components/SetupAdmin';
 import { useContacts } from './lib/store';
-
-const CREDENTIALS = {
-  admin: { password: 'Warlord@12', role: 'admin' },
-  user: { password: 'CWS$2025', role: 'user' }
-};
+import { db, auth, signOut, sendEmailVerification } from './lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const PAGE_SIZES = ['A3', 'A4', 'A5', 'Letter', 'Legal'];
 const ORIENTATIONS = ['portrait', 'landscape'];
 
 function App() {
-  const { contacts, loading, isDemo, addContact, updateContact, deleteContact } = useContacts();
+  const { contacts, loading: contactsLoading, isDemo, addContact, updateContact, deleteContact } = useContacts();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [needsSetup, setNeedsSetup] = useState(false);
   const [selectedContactIds, setSelectedContactIds] = useState(new Set());
   const [pageSize, setPageSize] = useState('A5');
   const [orientation, setOrientation] = useState('landscape');
+
+  useEffect(() => {
+    if (isDemo) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAuthLoading(false);
+      return;
+    }
+
+    const checkSetup = async () => {
+      try {
+        // Check system/setup document instead of users collection (which is secured)
+        const setupDocRef = doc(db, 'system', 'setup');
+        const setupDoc = await getDoc(setupDocRef);
+        // If system/setup doc exists, setup is done. If not, we need setup.
+        // Also fallback: if it doesn't exist, we might be in a legacy state or fresh state.
+        // But for this new version, fresh state = no doc.
+        setNeedsSetup(!setupDoc.exists());
+      } catch (error) {
+        console.error("Error checking setup:", error);
+        // If we can't read system/setup, likely permission error or network.
+        // Assume setup is done to be safe/secure, forcing them to login.
+        // If they can't login, they might need to fix rules or manual intervention.
+        setNeedsSetup(false);
+      }
+    };
+
+    checkSetup();
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        // Fetch user role
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          setUser({ ...currentUser, role: userDoc.data().role });
+        } else {
+            // Fallback for immediate setup
+            setUser({ ...currentUser, role: 'admin' });
+        }
+      } else {
+        setUser(null);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [isDemo]);
 
   const printComponentRef = useRef();
 
@@ -67,25 +116,74 @@ function App() {
 
   const selectedContacts = contacts.filter(c => selectedContactIds.has(c.id));
 
-  const handleLogin = (username, password) => {
-    const creds = CREDENTIALS[username];
-    if (creds && creds.password === password) {
-      setUser({ username, role: creds.role });
-    } else {
-      throw new Error('Invalid username or password');
+  const handleLogout = async () => {
+    if (!isDemo) {
+      await signOut(auth);
     }
-  };
-
-  const handleLogout = () => {
     setUser(null);
   };
 
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
+  if (contactsLoading || authLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <Loader2 className="animate-spin text-blue-600" size={32} />
+      </div>
+    );
   }
 
-  const canEdit = user.role === 'admin';
-  const canDelete = user.role === 'admin';
+  if (needsSetup && !isDemo && !user) {
+    return <SetupAdmin onSetupComplete={() => setNeedsSetup(false)} />;
+  }
+
+  if (!user && !isDemo) {
+    return <Login />;
+  }
+
+  // Check Email Verification
+  if (user && !user.emailVerified && !isDemo) {
+      return (
+          <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+              <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Email Verification Required</h2>
+                  <p className="text-gray-600 mb-6">
+                      Please check your email ({user.email}) and click the verification link to access the application.
+                  </p>
+                  <div className="space-y-4">
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+                    >
+                        I have verified my email
+                    </button>
+                    <button
+                        onClick={async () => {
+                            try {
+                                await sendEmailVerification(user);
+                                alert("Verification email sent!");
+                            } catch (e) {
+                                alert(e.message);
+                            }
+                        }}
+                        className="w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-50 transition-colors"
+                    >
+                        Resend Verification Email
+                    </button>
+                    <button
+                        onClick={handleLogout}
+                        className="text-sm text-gray-500 hover:text-gray-700 underline"
+                    >
+                        Sign Out
+                    </button>
+                  </div>
+              </div>
+          </div>
+      );
+  }
+
+  // In demo mode, we use a fake admin user
+  const effectiveUser = isDemo ? { role: 'admin' } : user;
+  const canEdit = effectiveUser.role === 'admin';
+  const canDelete = effectiveUser.role === 'admin';
 
   const handleAdd = () => {
     setEditingContact(null);
@@ -106,7 +204,13 @@ function App() {
   };
 
   return (
-    <Layout isDemo={isDemo} onLogout={handleLogout} onSetupClick={() => setIsSettingsOpen(true)}>
+    <Layout
+      isDemo={isDemo}
+      onLogout={handleLogout}
+      onSetupClick={() => setIsSettingsOpen(true)}
+      onUserManagementClick={() => setIsUserManagementOpen(true)}
+      isAdmin={canEdit} // canEdit is true for admins
+    >
       {/* Action Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
         <div className="relative w-full sm:w-96">
@@ -200,7 +304,7 @@ function App() {
       </div>
 
       {/* Content Area */}
-      {loading ? (
+      {contactsLoading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="animate-spin text-blue-600" size={32} />
         </div>
@@ -252,6 +356,11 @@ function App() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+
+      <UserManagement
+        isOpen={isUserManagementOpen}
+        onClose={() => setIsUserManagementOpen(false)}
       />
 
       <PreviewModal

@@ -6,6 +6,9 @@ Welcome to the Address Label Printer! This guide is designed to help you set up 
 1. [Introduction](#1-introduction)
 2. [Running Locally (On Your Computer)](#2-running-locally-on-your-computer)
 3. [Running on the Web (GitHub Pages)](#3-running-on-the-web-github-pages)
+4. [First Time Setup](#4-first-time-setup)
+5. [Managing Users](#5-managing-users)
+6. [Using the Application](#6-using-the-application)
 4. [Using the Application](#4-using-the-application)
 
 ---
@@ -79,6 +82,51 @@ After saving, stay on the **"Pages"** settings screen. In a moment, a box will a
 
 ---
 
+## 4. First Time Setup
+
+When you first open the application (and connect your database), you will see a **"First Time Setup"** screen.
+
+1.  Enter your email address and create a strong password.
+2.  This account will automatically be the **First Administrator**.
+3.  Once created, you will be logged in automatically.
+
+---
+
+## 5. Managing Users
+
+The application uses an **Invite-Only** system. New users cannot sign up unless an Administrator invites them.
+
+### Inviting a User (Admin Only)
+1.  Log in as an Administrator.
+2.  Click the **Users** button in the top right corner.
+3.  Enter the email address of the person you want to invite.
+4.  Select their role:
+    *   **User:** Can Add and View contacts.
+    *   **Admin:** Can Add, Edit, Delete contacts, and Manage Users.
+5.  Click **"Send Invite"**.
+
+### Limits
+*   **Admins:** Maximum 3
+*   **Users:** Maximum 5
+
+### Joining as a User
+1.  Ask an Administrator to send an invite to your email.
+2.  Go to the application login screen.
+3.  Click **"Create Account"**.
+4.  Enter your invited email and choose a password.
+5.  Check your email inbox for a verification link (optional but recommended).
+6.  Log in!
+
+### Password Recovery
+If you forget your password:
+1.  Go to the login screen.
+2.  Click **"Forgot your password?"**.
+3.  Enter your email address.
+4.  You will receive a password reset link in your email.
+
+---
+
+## 6. Using the Application
 ## 4. Using the Application
 
 ### Login
