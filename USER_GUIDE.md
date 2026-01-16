@@ -9,6 +9,7 @@ Welcome to the Address Label Printer! This guide is designed to help you set up 
 4. [First Time Setup](#4-first-time-setup)
 5. [Managing Users](#5-managing-users)
 6. [Using the Application](#6-using-the-application)
+4. [Using the Application](#4-using-the-application)
 
 ---
 
@@ -126,6 +127,17 @@ If you forget your password:
 ---
 
 ## 6. Using the Application
+## 4. Using the Application
+
+### Login
+The application is protected. Use these credentials to log in:
+
+*   **Admin (Can Add, Edit, Delete):**
+    *   Username: `admin`
+    *   Password: `Warlord@12`
+*   **User (Can Add & View only):**
+    *   Username: `user`
+    *   Password: `CWS$2025`
 
 ### Managing Contacts
 *   **Add:** Click **"New Contact"** at the top right. Fill in the details (Name, Address, City, etc.) and save.

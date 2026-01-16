@@ -3,6 +3,8 @@ import { Lock, Mail } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from '../lib/firebase';
 import { SignUp } from './SignUp';
+import { Lock, User } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 export function Login() {
   const [isRegistering, setIsRegistering] = useState(false);
