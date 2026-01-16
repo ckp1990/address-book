@@ -46,6 +46,7 @@ export async function migrateData(supabaseUrl, supabaseKey, onProgress) {
             // Firestore IDs must be strings.
             // Let's strip the ID to avoid conflicts and let Firestore generate a new one,
             // but we preserve all other fields.
+            // eslint-disable-next-line no-unused-vars
             const { id, ...contactData } = contact;
 
             // Clean up any null values if necessary, but Firestore handles them.

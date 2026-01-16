@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 /**
@@ -65,9 +65,9 @@ export async function ensureAuth() {
                 // Since we call signInAnonymously on load, we just wait.
                 // But if it fails, onAuthStateChanged might not fire with a user.
                 // So we can try to sign in again here to be safe and catch errors.
-                signInAnonymously(auth).then((u) => {
+                signInAnonymously(auth).then(() => {
                    // onAuthStateChanged will fire
-                }).catch((error) => {
+                }).catch(() => {
                    unsubscribe();
                    reject(new Error("Authentication failed. Please enable 'Anonymous' sign-in method in Firebase Console -> Authentication."));
                 });

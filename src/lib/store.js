@@ -13,43 +13,43 @@ export function useContacts() {
     const isDemo = !db;
 
     useEffect(() => {
-        fetchContacts();
-    }, []);
+        async function fetchContacts() {
+            setLoading(true);
+            try {
+                if (isDemo) {
+                    // Load from LocalStorage
+                    const localData = JSON.parse(localStorage.getItem('demo_contacts') || '[]');
+                    setContacts(localData);
+                } else {
+                    // Load from Firebase
+                    await ensureAuth();
+                    const contactsRef = collection(db, 'contacts');
 
-    async function fetchContacts() {
-        setLoading(true);
-        try {
-            if (isDemo) {
-                // Load from LocalStorage
-                const localData = JSON.parse(localStorage.getItem('demo_contacts') || '[]');
-                setContacts(localData);
-            } else {
-                // Load from Firebase
-                await ensureAuth();
-                const contactsRef = collection(db, 'contacts');
-
-                try {
-                    const q = query(contactsRef, orderBy('created_at', 'desc'));
-                    const querySnapshot = await getDocs(q);
-                    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setContacts(data);
-                } catch (idxError) {
-                    console.warn("Index missing or error, fetching without sort:", idxError);
-                    // Fallback to unsorted fetch
-                    const querySnapshot = await getDocs(contactsRef);
-                    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    // Client-side sort
-                    data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                    setContacts(data);
+                    try {
+                        const q = query(contactsRef, orderBy('created_at', 'desc'));
+                        const querySnapshot = await getDocs(q);
+                        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setContacts(data);
+                    } catch (idxError) {
+                        console.warn("Index missing or error, fetching without sort:", idxError);
+                        // Fallback to unsorted fetch
+                        const querySnapshot = await getDocs(contactsRef);
+                        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        // Client-side sort
+                        data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                        setContacts(data);
+                    }
                 }
+            } catch (err) {
+                console.error('Error fetching contacts:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
             }
-        } catch (err) {
-            console.error('Error fetching contacts:', err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
         }
-    }
+
+        fetchContacts();
+    }, [isDemo]);
 
     async function addContact(contact) {
         try {

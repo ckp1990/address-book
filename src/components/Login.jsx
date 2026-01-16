@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Lock, User } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 export function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -21,12 +22,10 @@ export function Login({ onLogin }) {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-            <Lock className="text-white h-6 w-6" />
-          </div>
+          <img src={logo} alt="Logo" className="w-20 h-20 rounded-xl object-contain" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to Address Book
+          Sign in to Address Label Printer
         </h2>
       </div>
 

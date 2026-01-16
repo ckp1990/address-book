@@ -1,5 +1,6 @@
 import { ConnectionBanner } from './ConnectionBanner';
 import { LogOut } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 export function Layout({ children, isDemo, onLogout, onSetupClick }) {
     return (
@@ -8,10 +9,8 @@ export function Layout({ children, isDemo, onLogout, onSetupClick }) {
             <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">A</span>
-                        </div>
-                        <h1 className="text-xl font-bold text-gray-900 tracking-tight">Address Book</h1>
+                        <img src={logo} alt="Logo" className="w-10 h-10 rounded-lg object-cover" />
+                        <h1 className="text-xl font-bold text-gray-900 tracking-tight">Address Label Printer</h1>
                     </div>
                     {onLogout && (
                         <button
@@ -29,7 +28,7 @@ export function Layout({ children, isDemo, onLogout, onSetupClick }) {
             </main>
             <footer className="bg-white border-t border-gray-200 py-6 mt-auto">
                 <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
-                    <p>&copy; {new Date().getFullYear()} Address Book App. Built with React & Firebase.</p>
+                    <p>&copy; {new Date().getFullYear()} Address Label Printer. Built with React & Firebase.</p>
                 </div>
             </footer>
         </div>
