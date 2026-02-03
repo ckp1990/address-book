@@ -46,8 +46,8 @@ When you first open your online Address Book, it will be in "Demo Mode" (saving 
 
 To connect it to your cloud database:
 
-1.  Follow the [Supabase Setup Guide](./SUPABASE_SETUP.md) to get your URL and Key.
+1.  Follow the [Firebase Setup Guide](./FIREBASE_SETUP.md) to get your configuration details.
 2.  On your live website, click the **Settings** (gear icon) button.
-3.  Enter your Supabase details and click Save.
+3.  Enter your Firebase details (API Key, Project ID, App ID, etc.) and click Save.
 
 Now you can access your contacts from any computer by going to your website and entering those same settings!

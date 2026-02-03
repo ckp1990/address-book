@@ -127,17 +127,9 @@ If you forget your password:
 ---
 
 ## 6. Using the Application
-## 4. Using the Application
 
 ### Login
-The application is protected. Use these credentials to log in:
-
-*   **Admin (Can Add, Edit, Delete):**
-    *   Username: `admin`
-    *   Password: `Warlord@12`
-*   **User (Can Add & View only):**
-    *   Username: `user`
-    *   Password: `CWS$2025`
+Once you have created your account and logged in:
 
 ### Managing Contacts
 *   **Add:** Click **"New Contact"** at the top right. Fill in the details (Name, Address, City, etc.) and save.
@@ -148,3 +140,7 @@ The application is protected. Use these credentials to log in:
 1.  **Select Contacts:** Click the "Select" button on the cards you want to print, or click "Select All".
 2.  **Configure:** Use the dropdowns at the top to choose your paper size (e.g., A4, Letter) and orientation (Landscape/Portrait).
 3.  **Preview/Print:** Click the **"Print"** button. This will open your computer's print dialog where you can send it to your printer.
+
+## Recent Updates
+
+For a list of recent changes and updates to the application, please refer to the [Changelog](CHANGELOG.md).
