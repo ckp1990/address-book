@@ -7,9 +7,9 @@ import {
     createUserWithEmailAndPassword,
     sendPasswordResetEmail,
     sendEmailVerification,
-    signOut
+    signOut,
+    signInAnonymously
 } from 'firebase/auth';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 /**
  * Reads Firebase configuration from LocalStorage.
@@ -59,20 +59,15 @@ export async function ensureAuth() {
     if (!auth) return null;
     if (auth.currentUser) return auth.currentUser;
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
-            unsubscribe();
-            resolve(user);
             if (user) {
                 unsubscribe();
                 resolve(user);
             } else {
-                // Not signed in, attempt sign in again if needed, or wait for the initial sign-in to fail/succeed
-                // Since we call signInAnonymously on load, we just wait.
-                // But if it fails, onAuthStateChanged might not fire with a user.
-                // So we can try to sign in again here to be safe and catch errors.
+                // Not signed in, attempt sign in again if needed
                 signInAnonymously(auth).then(() => {
-                   // onAuthStateChanged will fire
+                   // onAuthStateChanged will fire again with the user
                 }).catch(() => {
                    unsubscribe();
                    reject(new Error("Authentication failed. Please enable 'Anonymous' sign-in method in Firebase Console -> Authentication."));

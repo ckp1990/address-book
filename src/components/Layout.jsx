@@ -1,6 +1,5 @@
 import { ConnectionBanner } from './ConnectionBanner';
 import { LogOut, Users } from 'lucide-react';
-import { LogOut } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 export function Layout({ children, isDemo, onLogout, onSetupClick, onUserManagementClick, isAdmin }) {
