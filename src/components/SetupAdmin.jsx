@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Lock, Mail } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { db, createUserWithEmailAndPassword } from '../lib/firebase';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 
 export function SetupAdmin({ onSetupComplete }) {
   const [email, setEmail] = useState('');
@@ -23,13 +23,6 @@ export function SetupAdmin({ onSetupComplete }) {
     }
 
     try {
-      // Double check that no users exist
-      const usersRef = collection(db, 'users');
-      const snapshot = await getDocs(usersRef);
-      if (!snapshot.empty) {
-        throw new Error('Setup already completed. Please refresh and login.');
-      }
-
       const userCredential = await createUserWithEmailAndPassword(email, password);
       const user = userCredential.user;
 
