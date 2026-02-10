@@ -25,10 +25,12 @@ export function UserManagement({ isOpen, onClose }) {
       const usersRef = collection(db, 'users');
 
       const adminQuery = query(usersRef, where('role', '==', 'admin'));
-      const adminSnapshot = await getCountFromServer(adminQuery);
-
       const userQuery = query(usersRef, where('role', '==', 'user'));
-      const userSnapshot = await getCountFromServer(userQuery);
+
+      const [adminSnapshot, userSnapshot] = await Promise.all([
+        getCountFromServer(adminQuery),
+        getCountFromServer(userQuery)
+      ]);
 
       setStats({
         admins: adminSnapshot.data().count,
@@ -66,11 +68,17 @@ export function UserManagement({ isOpen, onClose }) {
       const invitesRef = collection(db, 'invites');
       const usersRef = collection(db, 'users');
 
-      // 1. Check Limits (Active Users + Pending Invites)
-
-      // Count pending invites for the target role
+      // 1. Check Limits (Active Users + Pending Invites) and existing users
       const pendingInvitesQuery = query(invitesRef, where('role', '==', role), where('status', '==', 'pending'));
-      const pendingSnapshot = await getCountFromServer(pendingInvitesQuery);
+      const emailQuery = query(invitesRef, where('email', '==', email));
+      const userEmailQuery = query(usersRef, where('email', '==', email));
+
+      const [pendingSnapshot, emailSnapshot, userEmailSnapshot] = await Promise.all([
+        getCountFromServer(pendingInvitesQuery),
+        getDocs(emailQuery),
+        getDocs(userEmailQuery)
+      ]);
+
       const pendingCount = pendingSnapshot.data().count;
 
       if (role === 'admin') {
@@ -79,16 +87,10 @@ export function UserManagement({ isOpen, onClose }) {
          if (stats.users + pendingCount >= 5) throw new Error('Maximum limit of 5 Users reached (including pending invites).');
       }
 
-      // Check if email already invited
-      const emailQuery = query(invitesRef, where('email', '==', email));
-      const emailSnapshot = await getDocs(emailQuery);
       if (!emailSnapshot.empty) {
         throw new Error('This email has already been invited.');
       }
 
-      // Check if email already registered
-      const userEmailQuery = query(usersRef, where('email', '==', email));
-      const userEmailSnapshot = await getDocs(userEmailQuery);
       if (!userEmailSnapshot.empty) {
         throw new Error('User with this email already exists.');
       }
