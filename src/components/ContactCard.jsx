@@ -1,8 +1,7 @@
-import { memo } from 'react';
 import { Phone, MapPin, Trash2, Edit2, User } from 'lucide-react';
 import { formatAddress } from '../lib/utils';
 
-export const ContactCard = memo(function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete, onSelect, isSelected }) {
+export function ContactCard({ contact, onDelete, onEdit, canEdit, canDelete, onSelect, isSelected }) {
     return (
         <div className={`bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-200 overflow-hidden group relative ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/10' : 'border-gray-100'}`}>
             {/* Selection Checkbox */}
@@ -67,4 +66,4 @@ export const ContactCard = memo(function ContactCard({ contact, onDelete, onEdit
             </div>
         </div>
     );
-});
+}

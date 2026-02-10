@@ -1,9 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
-import { useState, useRef, useEffect, useMemo } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
-import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { ContactCard } from './components/ContactCard';
 import { ContactForm } from './components/ContactForm';
@@ -90,45 +88,41 @@ function App() {
     onAfterPrint: () => setIsPreviewOpen(false),
   });
 
-  const filteredContacts = useMemo(() => contacts.filter(contact =>
+  const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.phone?.includes(searchQuery)
-  ), [contacts, searchQuery]);
+  );
 
-  const handleSelect = useCallback((id, isSelected) => {
-    setSelectedContactIds(prev => {
-      const newSelected = new Set(prev);
-      if (isSelected) {
-        newSelected.add(id);
-      } else {
-        newSelected.delete(id);
-      }
-      return newSelected;
-    });
-  }, []);
+  const handleSelect = (id, isSelected) => {
+    const newSelected = new Set(selectedContactIds);
+    if (isSelected) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedContactIds(newSelected);
+  };
 
-  const handleSelectAll = useCallback(() => {
-    setSelectedContactIds(prev => {
-      if (prev.size === filteredContacts.length) {
-        return new Set();
-      } else {
-        return new Set(filteredContacts.map(c => c.id));
-      }
-    });
-  }, [filteredContacts]);
+  const handleSelectAll = () => {
+    if (selectedContactIds.size === filteredContacts.length) {
+      setSelectedContactIds(new Set());
+    } else {
+      setSelectedContactIds(new Set(filteredContacts.map(c => c.id)));
+    }
+  };
 
-  const handleClearSelection = useCallback(() => {
+  const handleClearSelection = () => {
     setSelectedContactIds(new Set());
-  }, []);
+  };
 
-  const selectedContacts = useMemo(() => contacts.filter(c => selectedContactIds.has(c.id)), [contacts, selectedContactIds]);
+  const selectedContacts = contacts.filter(c => selectedContactIds.has(c.id));
 
-  const handleLogout = useCallback(async () => {
+  const handleLogout = async () => {
     if (!isDemo) {
       await signOut(auth);
     }
     setUser(null);
-  }, [isDemo]);
+  };
 
   if (contactsLoading || authLoading) {
     return (
@@ -192,23 +186,23 @@ function App() {
   const canEdit = effectiveUser.role === 'admin';
   const canDelete = effectiveUser.role === 'admin';
 
-  const handleAdd = useCallback(() => {
+  const handleAdd = () => {
     setEditingContact(null);
     setIsFormOpen(true);
-  }, []);
+  };
 
-  const handleEdit = useCallback((contact) => {
+  const handleEdit = (contact) => {
     setEditingContact(contact);
     setIsFormOpen(true);
-  }, []);
+  };
 
-  const handleSubmit = useCallback(async (data) => {
+  const handleSubmit = async (data) => {
     if (editingContact) {
       await updateContact(editingContact.id, data);
     } else {
       await addContact(data);
     }
-  }, [editingContact, updateContact, addContact]);
+  };
 
   return (
     <Layout
