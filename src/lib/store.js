@@ -1,10 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { db, ensureAuth } from './firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
-
-// Performance Optimization: Use Intl.Collator for efficient string comparison
-// This is significantly faster (~5x) than parsing Dates or using localeCompare inside a loop
-const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 /**
  * Custom hook to manage contacts.
@@ -23,8 +19,6 @@ export function useContacts() {
                 if (isDemo) {
                     // Load from LocalStorage
                     const localData = JSON.parse(localStorage.getItem('demo_contacts') || '[]');
-                    // Sort by name
-                    localData.sort((a, b) => collator.compare(a.name || '', b.name || ''));
                     setContacts(localData);
                 } else {
                     // Load from Firebase
@@ -32,8 +26,7 @@ export function useContacts() {
                     const contactsRef = collection(db, 'contacts');
 
                     try {
-                        // Attempt server-side sort by name
-                        const q = query(contactsRef, orderBy('name', 'asc'));
+                        const q = query(contactsRef, orderBy('created_at', 'desc'));
                         const querySnapshot = await getDocs(q);
                         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         setContacts(data);
@@ -42,8 +35,8 @@ export function useContacts() {
                         // Fallback to unsorted fetch
                         const querySnapshot = await getDocs(contactsRef);
                         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        // Client-side sort by name
-                        data.sort((a, b) => collator.compare(a.name || '', b.name || ''));
+                        // Client-side sort
+                        data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                         setContacts(data);
                     }
                 }
@@ -58,7 +51,7 @@ export function useContacts() {
         fetchContacts();
     }, [isDemo]);
 
-    const addContact = useCallback(async (contact) => {
+    async function addContact(contact) {
         try {
             const newContactData = {
                 ...contact,
@@ -70,75 +63,57 @@ export function useContacts() {
                     id: crypto.randomUUID(),
                     ...newContactData
                 };
-                const updated = [...contacts, newContact].sort((a, b) => collator.compare(a.name || '', b.name || ''));
+                const updated = [newContact, ...contacts];
                 setContacts(updated);
                 localStorage.setItem('demo_contacts', JSON.stringify(updated));
-                setContacts(prev => {
-                    const updated = [newContact, ...prev];
-                    localStorage.setItem('demo_contacts', JSON.stringify(updated));
-                    return updated;
-                });
                 return newContact;
             } else {
                 await ensureAuth();
                 const docRef = await addDoc(collection(db, 'contacts'), newContactData);
                 const savedContact = { id: docRef.id, ...newContactData };
-                const updated = [...contacts, savedContact].sort((a, b) => collator.compare(a.name || '', b.name || ''));
-                setContacts(updated);
-                setContacts(prev => [savedContact, ...prev]);
+                setContacts([savedContact, ...contacts]);
                 return savedContact;
             }
         } catch (err) {
             setError(err.message);
             throw err;
         }
-    }, [isDemo]);
+    }
 
-    const deleteContact = useCallback(async (id) => {
+    async function deleteContact(id) {
         try {
             if (isDemo) {
-                setContacts(prev => {
-                    const updated = prev.filter(c => c.id !== id);
-                    localStorage.setItem('demo_contacts', JSON.stringify(updated));
-                    return updated;
-                });
+                const updated = contacts.filter(c => c.id !== id);
+                setContacts(updated);
+                localStorage.setItem('demo_contacts', JSON.stringify(updated));
             } else {
                 await ensureAuth();
                 await deleteDoc(doc(db, 'contacts', id));
-                setContacts(prev => prev.filter(c => c.id !== id));
+                setContacts(contacts.filter(c => c.id !== id));
             }
         } catch (err) {
             setError(err.message);
             throw err;
         }
-    }, [isDemo]);
+    }
 
-    const updateContact = useCallback(async (id, updates) => {
+    async function updateContact(id, updates) {
         try {
             if (isDemo) {
-                const updated = contacts.map(c => c.id === id ? { ...c, ...updates } : c)
-                                        .sort((a, b) => collator.compare(a.name || '', b.name || ''));
+                const updated = contacts.map(c => c.id === id ? { ...c, ...updates } : c);
                 setContacts(updated);
                 localStorage.setItem('demo_contacts', JSON.stringify(updated));
-                setContacts(prev => {
-                    const updated = prev.map(c => c.id === id ? { ...c, ...updates } : c);
-                    localStorage.setItem('demo_contacts', JSON.stringify(updated));
-                    return updated;
-                });
             } else {
                 await ensureAuth();
                 const contactRef = doc(db, 'contacts', id);
                 await updateDoc(contactRef, updates);
-                const updated = contacts.map(c => c.id === id ? { ...c, ...updates } : c)
-                                        .sort((a, b) => collator.compare(a.name || '', b.name || ''));
-                setContacts(updated);
-                setContacts(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+                setContacts(contacts.map(c => c.id === id ? { ...c, ...updates } : c));
             }
         } catch (err) {
             setError(err.message);
             throw err;
         }
-    }, [isDemo]);
+    }
 
     return {
         contacts,

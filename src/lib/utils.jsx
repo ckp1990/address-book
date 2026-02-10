@@ -14,21 +14,23 @@ export function formatAddress(address) {
     // A simple split(',') removes commas.
     // We can split, then re-add commas to all but the last segment if we want precise control.
 
-    const parts = address
-        .split(',')
-        .map((part) => part.trim())
-        .filter((part) => part !== '');
-
-    if (parts.length === 0) return null;
+    const parts = address.split(',');
 
     return (
         <>
             {parts.map((part, index) => {
                 const isLast = index === parts.length - 1;
+                const text = part.trim();
+
+                // If text is empty (e.g. trailing comma or double comma), render nothing or simple break?
+                // Let's assume we render empty lines if they exist, or just the text.
+                // Request says "print words in next line after comma".
+
+                if (!text && !isLast) return <br key={index} />; // Handle empty segments if needed
 
                 return (
                     <span key={index} className="block">
-                        {part}{!isLast && ','}
+                        {text}{!isLast && ','}
                     </span>
                 );
             })}
