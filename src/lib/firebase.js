@@ -3,11 +3,11 @@ import { getFirestore } from 'firebase/firestore';
 import {
     getAuth,
     onAuthStateChanged,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    sendPasswordResetEmail,
-    sendEmailVerification,
-    signOut,
+    signInWithEmailAndPassword as _signInWithEmailAndPassword,
+    createUserWithEmailAndPassword as _createUserWithEmailAndPassword,
+    sendPasswordResetEmail as _sendPasswordResetEmail,
+    sendEmailVerification as _sendEmailVerification,
+    signOut as _signOut,
     signInAnonymously
 } from 'firebase/auth';
 
@@ -50,6 +50,53 @@ if (config) {
         console.error("Error initializing Firebase:", e);
     }
 }
+
+/**
+ * Wraps signInWithEmailAndPassword to inject the auth instance.
+ */
+const signInWithEmailAndPassword = (email, password) => {
+    if (!auth) throw new Error("Firebase not initialized");
+    return _signInWithEmailAndPassword(auth, email, password);
+};
+
+/**
+ * Wraps createUserWithEmailAndPassword to inject the auth instance.
+ */
+const createUserWithEmailAndPassword = (email, password) => {
+    if (!auth) throw new Error("Firebase not initialized");
+    return _createUserWithEmailAndPassword(auth, email, password);
+};
+
+/**
+ * Wraps sendPasswordResetEmail to inject the auth instance.
+ */
+const sendPasswordResetEmail = (email, actionCodeSettings) => {
+    if (!auth) throw new Error("Firebase not initialized");
+    return _sendPasswordResetEmail(auth, email, actionCodeSettings);
+};
+
+/**
+ * Wraps sendEmailVerification to inject the auth instance.
+ * It ignores the passed 'user' argument (if any) and uses 'auth.currentUser'
+ * to ensure we are calling the method on a valid Firebase User object.
+ */
+const sendEmailVerification = (user, actionCodeSettings) => {
+    if (!auth) throw new Error("Firebase not initialized");
+    // We ignore the passed 'user' argument because it might be a plain object
+    // (stripped of methods) from the React state. We use the official SDK user instance.
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error("No user is currently signed in to verify.");
+
+    return _sendEmailVerification(currentUser, actionCodeSettings);
+};
+
+/**
+ * Wraps signOut to inject the auth instance.
+ */
+const signOut = () => {
+    if (!auth) throw new Error("Firebase not initialized");
+    return _signOut(auth);
+};
 
 /**
  * Ensures the user is authenticated before performing operations.
