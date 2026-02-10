@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Mail, Shield, User } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, query, where, getDocs, getCountFromServer } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, getCountFromServer, orderBy, limit, startAfter } from 'firebase/firestore';
 
 export function UserManagement({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
@@ -11,12 +11,15 @@ export function UserManagement({ isOpen, onClose }) {
   const [success, setSuccess] = useState('');
   const [stats, setStats] = useState({ admins: 0, users: 0 });
   const [invites, setInvites] = useState([]);
+  const [lastVisible, setLastVisible] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
       fetchStats();
       fetchInvites();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const fetchStats = async () => {
@@ -41,16 +44,59 @@ export function UserManagement({ isOpen, onClose }) {
     }
   };
 
-  const fetchInvites = async () => {
+  const fetchInvites = async (nextPage = false) => {
     if (!db) return; // Demo mode guard
+    const startTime = performance.now();
     try {
         const invitesRef = collection(db, 'invites');
-        const q = query(invitesRef); // In a real app, maybe filter by status
+        let q;
+
+        if (nextPage && lastVisible) {
+            q = query(invitesRef, orderBy('email'), startAfter(lastVisible), limit(10));
+        } else {
+            q = query(invitesRef, orderBy('email'), limit(10));
+        }
+
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setInvites(data);
+
+        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === 10);
+
+        if (nextPage) {
+            setInvites(prev => [...prev, ...data]);
+        } else {
+            setInvites(data);
+        }
+
+        const endTime = performance.now();
+        console.log(`Fetched ${data.length} invites in ${(endTime - startTime).toFixed(2)}ms`);
     } catch (err) {
         console.error("Error fetching invites:", err);
+    }
+  };
+
+  const seedInvites = async () => {
+    if (!db) return;
+    if (!window.confirm("This will add 50 dummy invites to the database. Continue?")) return;
+    setLoading(true);
+    try {
+        const invitesRef = collection(db, 'invites');
+        const promises = Array.from({ length: 50 }).map((_, i) =>
+            addDoc(invitesRef, {
+                email: `bench_${Date.now()}_${i}@test.com`,
+                role: 'user',
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            })
+        );
+        await Promise.all(promises);
+        setSuccess("Seeded 50 invites.");
+        fetchInvites();
+    } catch (err) {
+        setError("Seeding failed: " + err.message);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -193,25 +239,44 @@ export function UserManagement({ isOpen, onClose }) {
 
             {/* Recent Invites List */}
             <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Recent Invites</h4>
+                <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-sm font-medium text-gray-900">Recent Invites</h4>
+                    <button
+                        onClick={seedInvites}
+                        className="text-xs text-gray-400 hover:text-blue-600 underline"
+                        title="Add 50 dummy invites for testing"
+                    >
+                        Seed Data
+                    </button>
+                </div>
                 <div className="bg-gray-50 rounded-md overflow-hidden max-h-40 overflow-y-auto">
                     {invites.length === 0 ? (
                         <p className="text-sm text-gray-500 p-4 text-center">No invites sent yet.</p>
                     ) : (
-                        <ul className="divide-y divide-gray-200">
-                            {invites.map(invite => (
-                                <li key={invite.id} className="px-4 py-3 flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        {invite.role === 'admin' ? <Shield className="h-4 w-4 text-blue-500 mr-2" /> : <User className="h-4 w-4 text-green-500 mr-2" />}
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-900">{invite.email}</p>
-                                            <p className="text-xs text-gray-500 capitalize">{invite.status}</p>
+                        <>
+                            <ul className="divide-y divide-gray-200">
+                                {invites.map(invite => (
+                                    <li key={invite.id} className="px-4 py-3 flex items-center justify-between">
+                                        <div className="flex items-center">
+                                            {invite.role === 'admin' ? <Shield className="h-4 w-4 text-blue-500 mr-2" /> : <User className="h-4 w-4 text-green-500 mr-2" />}
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-900">{invite.email}</p>
+                                                <p className="text-xs text-gray-500 capitalize">{invite.status}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    {/* Could add delete invite button here */}
-                                </li>
-                            ))}
-                        </ul>
+                                        {/* Could add delete invite button here */}
+                                    </li>
+                                ))}
+                            </ul>
+                            {hasMore && (
+                                <button
+                                    onClick={() => fetchInvites(true)}
+                                    className="w-full py-2 text-xs text-blue-600 hover:bg-blue-50 border-t border-gray-100 font-medium"
+                                >
+                                    Load More
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
