@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
+import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { ContactCard } from './components/ContactCard';
 import { ContactForm } from './components/ContactForm';
