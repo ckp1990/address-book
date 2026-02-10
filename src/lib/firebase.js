@@ -3,11 +3,11 @@ import { getFirestore } from 'firebase/firestore';
 import {
     getAuth,
     onAuthStateChanged,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    sendPasswordResetEmail,
+    signInWithEmailAndPassword as _signInWithEmailAndPassword,
+    createUserWithEmailAndPassword as _createUserWithEmailAndPassword,
+    sendPasswordResetEmail as _sendPasswordResetEmail,
     sendEmailVerification,
-    signOut,
+    signOut as _signOut,
     signInAnonymously
 } from 'firebase/auth';
 
@@ -50,6 +50,38 @@ if (config) {
         console.error("Error initializing Firebase:", e);
     }
 }
+
+/**
+ * Wraps signInWithEmailAndPassword to inject the auth instance.
+ */
+const signInWithEmailAndPassword = (email, password) => {
+    if (!auth) throw new Error("Firebase not initialized");
+    return _signInWithEmailAndPassword(auth, email, password);
+};
+
+/**
+ * Wraps createUserWithEmailAndPassword to inject the auth instance.
+ */
+const createUserWithEmailAndPassword = (email, password) => {
+    if (!auth) throw new Error("Firebase not initialized");
+    return _createUserWithEmailAndPassword(auth, email, password);
+};
+
+/**
+ * Wraps sendPasswordResetEmail to inject the auth instance.
+ */
+const sendPasswordResetEmail = (email, actionCodeSettings) => {
+    if (!auth) throw new Error("Firebase not initialized");
+    return _sendPasswordResetEmail(auth, email, actionCodeSettings);
+};
+
+/**
+ * Wraps signOut to inject the auth instance.
+ */
+const signOut = () => {
+    if (!auth) throw new Error("Firebase not initialized");
+    return _signOut(auth);
+};
 
 /**
  * Ensures the user is authenticated before performing operations.

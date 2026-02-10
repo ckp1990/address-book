@@ -119,7 +119,7 @@ function App() {
 
   const handleLogout = async () => {
     if (!isDemo) {
-      await signOut(auth);
+      await signOut();
     }
     setUser(null);
   };
