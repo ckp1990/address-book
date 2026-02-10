@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { Layout } from './components/Layout';
@@ -114,7 +114,7 @@ function App() {
     setSelectedContactIds(new Set());
   };
 
-  const selectedContacts = contacts.filter(c => selectedContactIds.has(c.id));
+  const selectedContacts = useMemo(() => contacts.filter(c => selectedContactIds.has(c.id)), [contacts, selectedContactIds]);
 
   const handleLogout = async () => {
     if (!isDemo) {
