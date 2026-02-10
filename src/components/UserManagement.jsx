@@ -27,10 +27,12 @@ export function UserManagement({ isOpen, onClose }) {
       const usersRef = collection(db, 'users');
 
       const adminQuery = query(usersRef, where('role', '==', 'admin'));
-      const adminSnapshot = await getCountFromServer(adminQuery);
-
       const userQuery = query(usersRef, where('role', '==', 'user'));
-      const userSnapshot = await getCountFromServer(userQuery);
+
+      const [adminSnapshot, userSnapshot] = await Promise.all([
+        getCountFromServer(adminQuery),
+        getCountFromServer(userQuery)
+      ]);
 
       setStats({
         admins: adminSnapshot.data().count,
