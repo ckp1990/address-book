@@ -34,9 +34,19 @@ export function useContacts() {
                         console.warn("Index missing or error, fetching without sort:", idxError);
                         // Fallback to unsorted fetch
                         const querySnapshot = await getDocs(contactsRef);
-                        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        // Client-side sort
-                        data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                        // Client-side sort with Schwartzian transform for performance
+                        const data = querySnapshot.docs
+                            .map(doc => {
+                                const d = doc.data();
+                                return {
+                                    id: doc.id,
+                                    ...d,
+                                    _sortTime: new Date(d.created_at).getTime()
+                                };
+                            })
+                            .sort((a, b) => b._sortTime - a._sortTime)
+                            // eslint-disable-next-line no-unused-vars
+                            .map(({ _sortTime, ...rest }) => rest);
                         setContacts(data);
                     }
                 }

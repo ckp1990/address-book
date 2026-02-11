@@ -1,0 +1,14 @@
+
+Running benchmark: Small Dataset (N=2000, 50 iterations)
+Baseline (Direct Sort): 19.8467 ms
+Schwartzian (Map-Sort-Map): 1.6502 ms
+Pre-calc & Keep (Map-Sort): 1.7054 ms
+Speedup (Schwartzian): 12.03x
+Speedup (Pre-calc): 11.64x
+
+Running benchmark: Large Dataset (N=10000, 20 iterations)
+Baseline (Direct Sort): 120.4927 ms
+Schwartzian (Map-Sort-Map): 9.9716 ms
+Pre-calc & Keep (Map-Sort): 10.2583 ms
+Speedup (Schwartzian): 12.08x
+Speedup (Pre-calc): 11.75x
