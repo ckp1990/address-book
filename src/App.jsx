@@ -84,37 +84,41 @@ function App() {
   const handlePrint = useReactToPrint({
     contentRef: printComponentRef,
     documentTitle: 'Contact-Labels',
-    onAfterPrint: () => setIsPreviewOpen(false),
+    onAfterPrint: useCallback(() => setIsPreviewOpen(false), []),
   });
 
-  const filteredContacts = contacts.filter(contact =>
+  const filteredContacts = useMemo(() => contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.phone?.includes(searchQuery)
-  );
+  ), [contacts, searchQuery]);
 
-  const handleSelect = (id, isSelected) => {
-    const newSelected = new Set(selectedContactIds);
-    if (isSelected) {
-      newSelected.add(id);
-    } else {
-      newSelected.delete(id);
-    }
-    setSelectedContactIds(newSelected);
-  };
+  const handleSelect = useCallback((id, isSelected) => {
+    setSelectedContactIds(prev => {
+      const newSelected = new Set(prev);
+      if (isSelected) {
+        newSelected.add(id);
+      } else {
+        newSelected.delete(id);
+      }
+      return newSelected;
+    });
+  }, []);
 
-  const handleSelectAll = () => {
-    if (selectedContactIds.size === filteredContacts.length) {
-      setSelectedContactIds(new Set());
-    } else {
-      setSelectedContactIds(new Set(filteredContacts.map(c => c.id)));
-    }
-  };
+  const handleSelectAll = useCallback(() => {
+    setSelectedContactIds(prev => {
+      if (prev.size === filteredContacts.length) {
+        return new Set();
+      } else {
+        return new Set(filteredContacts.map(c => c.id));
+      }
+    });
+  }, [filteredContacts]);
 
-  const handleClearSelection = () => {
+  const handleClearSelection = useCallback(() => {
     setSelectedContactIds(new Set());
-  };
+  }, []);
 
-  const selectedContacts = contacts.filter(c => selectedContactIds.has(c.id));
+  const selectedContacts = useMemo(() => contacts.filter(c => selectedContactIds.has(c.id)), [contacts, selectedContactIds]);
 
   const handleLogout = async () => {
     if (!isDemo) {
@@ -185,23 +189,23 @@ function App() {
   const canEdit = effectiveUser.role === 'admin';
   const canDelete = effectiveUser.role === 'admin';
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingContact(null);
     setIsFormOpen(true);
-  };
+  }, []);
 
-  const handleEdit = (contact) => {
+  const handleEdit = useCallback((contact) => {
     setEditingContact(contact);
     setIsFormOpen(true);
-  };
+  }, []);
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = useCallback(async (data) => {
     if (editingContact) {
       await updateContact(editingContact.id, data);
     } else {
       await addContact(data);
     }
-  };
+  }, [editingContact, updateContact, addContact]);
 
   return (
     <Layout
