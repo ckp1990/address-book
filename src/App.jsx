@@ -20,7 +20,6 @@ const PAGE_SIZES = ['A3', 'A4', 'A5', 'Letter', 'Legal'];
 const ORIENTATIONS = ['portrait', 'landscape'];
 
 function App() {
-  const { contacts, loading: contactsLoading, isDemo, addContact, updateContact, deleteContact } = useContacts();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
@@ -28,6 +27,7 @@ function App() {
   const [editingContact, setEditingContact] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
+  const { contacts, loading: contactsLoading, isDemo, addContact, updateContact, deleteContact } = useContacts(user?.uid);
   const [authLoading, setAuthLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [selectedContactIds, setSelectedContactIds] = useState(new Set());

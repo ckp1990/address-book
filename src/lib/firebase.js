@@ -7,8 +7,7 @@ import {
     createUserWithEmailAndPassword as _createUserWithEmailAndPassword,
     sendPasswordResetEmail as _sendPasswordResetEmail,
     sendEmailVerification,
-    signOut as _signOut,
-    signInAnonymously
+    signOut as _signOut
 } from 'firebase/auth';
 
 /**
@@ -91,20 +90,10 @@ export async function ensureAuth() {
     if (!auth) return null;
     if (auth.currentUser) return auth.currentUser;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                unsubscribe();
-                resolve(user);
-            } else {
-                // Not signed in, attempt sign in again if needed
-                signInAnonymously(auth).then(() => {
-                   // onAuthStateChanged will fire again with the user
-                }).catch(() => {
-                   unsubscribe();
-                   reject(new Error("Authentication failed. Please enable 'Anonymous' sign-in method in Firebase Console -> Authentication."));
-                });
-            }
+            unsubscribe();
+            resolve(user);
         });
     });
 }
