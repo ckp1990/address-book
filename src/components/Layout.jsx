@@ -2,7 +2,7 @@ import { ConnectionBanner } from './ConnectionBanner';
 import { LogOut, Users } from 'lucide-react';
 import logo from '../assets/logo.png';
 
-export function Layout({ children, isDemo, onLogout, onSetupClick, onUserManagementClick, isAdmin }) {
+export function Layout({ children, isDemo, onLogout, onSetupClick, onUserManagementClick, isAdmin, user }) {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <ConnectionBanner isDemo={isDemo} onSetupClick={onSetupClick} />
@@ -14,6 +14,11 @@ export function Layout({ children, isDemo, onLogout, onSetupClick, onUserManagem
                     </div>
                     {onLogout && (
                         <div className="flex items-center gap-2">
+                             {user?.displayName && (
+                                <span className="text-sm text-gray-600 font-medium hidden sm:block mr-2">
+                                    {user.displayName}
+                                </span>
+                             )}
                              {isAdmin && (
                                 <button
                                     onClick={onUserManagementClick}

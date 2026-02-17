@@ -116,6 +116,10 @@ export function saveFirebaseConfig(config) {
     if (!config.apiKey || !config.projectId || !config.appId) {
         throw new Error("API Key, Project ID, and App ID are required.");
     }
+    // Clear Local Mode if exists
+    localStorage.removeItem('is_local_mode');
+    localStorage.removeItem('local_user_name');
+
     localStorage.setItem('firebase_api_key', config.apiKey);
     localStorage.setItem('firebase_project_id', config.projectId);
     localStorage.setItem('firebase_app_id', config.appId);
@@ -145,6 +149,40 @@ export function clearFirebaseConfig() {
  */
 export function isFirebaseConfigured() {
     return !!db;
+}
+
+/**
+ * Checks if Local Mode is configured.
+ */
+export function isLocalModeConfigured() {
+    return localStorage.getItem('is_local_mode') === 'true';
+}
+
+/**
+ * Sets Local Mode configuration and reloads.
+ */
+export function setLocalModeConfig(username) {
+    if (!username) throw new Error("Username is required.");
+
+    // Clear Firebase Config if exists
+    localStorage.removeItem('firebase_api_key');
+    localStorage.removeItem('firebase_project_id');
+    localStorage.removeItem('firebase_app_id');
+    localStorage.removeItem('firebase_auth_domain');
+    localStorage.removeItem('firebase_storage_bucket');
+    localStorage.removeItem('firebase_messaging_sender_id');
+
+    localStorage.setItem('is_local_mode', 'true');
+    localStorage.setItem('local_user_name', username);
+    window.location.reload();
+}
+
+/**
+ * Gets the local user name.
+ */
+export function getLocalUser() {
+    if (!isLocalModeConfigured()) return null;
+    return localStorage.getItem('local_user_name');
 }
 
 export {
