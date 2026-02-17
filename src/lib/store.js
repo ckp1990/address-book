@@ -50,7 +50,6 @@ export function useContacts(userId) {
                                 };
                             })
                             .sort((a, b) => b._sortTime - a._sortTime)
-                            // eslint-disable-next-line no-unused-vars
                             .map(({ _sortTime, ...rest }) => rest);
                         setContacts(data);
                     }

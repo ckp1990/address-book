@@ -4,8 +4,6 @@ import { db } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, getCountFromServer } from 'firebase/firestore';
 
 export function UserManagement({ isOpen, onClose }) {
-  // eslint-disable-next-line no-unused-vars
-  const [activeTab, setActiveTab] = useState('invite'); // 'invite' or 'list'
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('user');
   const [loading, setLoading] = useState(false);

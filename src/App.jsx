@@ -1,5 +1,4 @@
-// eslint-disable-next-line no-unused-vars
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { Layout } from './components/Layout';
