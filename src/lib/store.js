@@ -6,7 +6,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy 
  * Custom hook to manage contacts.
  * Automatically switches between LocalStorage (Demo) and Firebase (Prod).
  */
-export function useContacts() {
+export function useContacts(userId) {
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -22,7 +22,12 @@ export function useContacts() {
                     setContacts(localData);
                 } else {
                     // Load from Firebase
-                    await ensureAuth();
+                    const user = await ensureAuth();
+                    if (!user) {
+                        setContacts([]);
+                        setLoading(false);
+                        return;
+                    }
                     const contactsRef = collection(db, 'contacts');
 
                     try {
@@ -59,7 +64,7 @@ export function useContacts() {
         }
 
         fetchContacts();
-    }, [isDemo]);
+    }, [isDemo, userId]);
 
     async function addContact(contact) {
         try {
