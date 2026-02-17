@@ -82,3 +82,28 @@ service cloud.firestore {
 6.  You will see a code block with `const firebaseConfig = { ... }`.
 7.  Copy the values for `apiKey`, `authDomain`, `projectId`, etc.
 8.  You will need to enter these into the **Settings** menu of your running application.
+
+## 6. Configure Firestore Indexes
+Firestore requires indexes for certain queries, especially those with multiple filters or sorting.
+
+### Option A: Manual Setup (Firebase Console)
+If you are not using the Firebase CLI, you must create these indexes manually:
+1.  Go to **"Build"** -> **"Firestore Database"**.
+2.  Click the **"Indexes"** tab.
+3.  Click **"Composite"** and then **"Create Index"**.
+4.  Add the following indexes:
+    - **Collection ID**: `invites`
+      - Fields: `role` (Ascending), `status` (Ascending)
+      - Query scope: Collection
+    - **Collection ID**: `invites`
+      - Fields: `email` (Ascending), `status` (Ascending)
+      - Query scope: Collection
+    - **Collection ID**: `contacts`
+      - Fields: `created_at` (Descending)
+      - Query scope: Collection
+
+### Option B: Firebase CLI
+If you have the Firebase CLI installed, you can deploy the included `firestore.indexes.json` file:
+1.  Run `firebase login`.
+2.  Run `firebase init firestore` (select your project).
+3.  Run `firebase deploy --only firestore:indexes`.
