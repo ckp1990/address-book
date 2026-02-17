@@ -11,8 +11,9 @@ import { PreviewModal } from './components/PreviewModal';
 import { UserManagement } from './components/UserManagement';
 import { Login } from './components/Login';
 import { SetupAdmin } from './components/SetupAdmin';
+import { Installer } from './components/Installer';
 import { useContacts } from './lib/store';
-import { db, auth, signOut, sendEmailVerification } from './lib/firebase';
+import { db, auth, signOut, sendEmailVerification, isFirebaseConfigured, isLocalModeConfigured, getLocalUser } from './lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -20,6 +21,7 @@ const PAGE_SIZES = ['A3', 'A4', 'A5', 'Letter', 'Legal'];
 const ORIENTATIONS = ['portrait', 'landscape'];
 
 function App() {
+  const [isInstalled, setIsInstalled] = useState(isFirebaseConfigured() || isLocalModeConfigured());
   const { contacts, loading: contactsLoading, isDemo, addContact, updateContact, deleteContact } = useContacts();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -35,8 +37,29 @@ function App() {
   const [orientation, setOrientation] = useState('landscape');
 
   useEffect(() => {
+    // If not installed, we don't need to do auth checks yet
+    if (!isInstalled) {
+        setAuthLoading(false);
+        return;
+    }
+
+    if (isLocalModeConfigured()) {
+        // In Local Mode, we are the admin "Local User"
+        const localUserName = getLocalUser();
+        setUser({
+            uid: 'local-admin',
+            email: 'local@device',
+            displayName: localUserName,
+            role: 'admin',
+            emailVerified: true
+        });
+        setAuthLoading(false);
+        return;
+    }
+
     if (isDemo) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // This fallback is for safety, but effectively covered by isLocalModeConfigured now
+      // unless someone manually cleared local storage flags but kept "isDemo" logic (db null).
       setAuthLoading(false);
       return;
     }
@@ -78,7 +101,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, [isDemo]);
+  }, [isDemo, isInstalled]);
 
   const printComponentRef = useRef();
 
@@ -118,11 +141,29 @@ function App() {
   const selectedContacts = contacts.filter(c => selectedContactIds.has(c.id));
 
   const handleLogout = async () => {
-    if (!isDemo) {
+    if (!isDemo && !isLocalModeConfigured()) {
       await signOut();
     }
+    // If local mode, "Logout" essentially just clears user state in memory,
+    // but on reload they are still logged in unless they reset config.
+    // Maybe we should allow "Reset App" from settings instead of Logout for local mode?
+    // For now, Logout just refreshes the page is probably confusing if it auto-logins.
+    // I will make Logout redirect to Installer if Local Mode?
+    // No, that deletes data.
+    // I'll just reload. The user is persistent.
+    // Or better: Local Mode doesn't really have "Logout".
+    // It has "Switch to Cloud" or "Reset".
+    // I will hide Logout button in Layout for Local Mode if needed, or make it "Switch Mode".
+    // For now, standard behavior.
     setUser(null);
+    if (isLocalModeConfigured()) {
+        window.location.reload();
+    }
   };
+
+  if (!isInstalled) {
+      return <Installer />;
+  }
 
   if (contactsLoading || authLoading) {
     return (
@@ -132,16 +173,16 @@ function App() {
     );
   }
 
-  if (needsSetup && !isDemo && !user) {
+  if (needsSetup && !isDemo && !user && !isLocalModeConfigured()) {
     return <SetupAdmin onSetupComplete={() => setNeedsSetup(false)} />;
   }
 
-  if (!user && !isDemo) {
+  if (!user && !isDemo && !isLocalModeConfigured()) {
     return <Login />;
   }
 
   // Check Email Verification
-  if (user && !user.emailVerified && !isDemo) {
+  if (user && !user.emailVerified && !isDemo && !isLocalModeConfigured()) {
       return (
           <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
               <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
@@ -182,9 +223,10 @@ function App() {
   }
 
   // In demo mode, we use a fake admin user
-  const effectiveUser = isDemo ? { role: 'admin' } : user;
-  const canEdit = effectiveUser.role === 'admin';
-  const canDelete = effectiveUser.role === 'admin';
+  // If isLocalModeConfigured, we already set user above with role='admin'.
+  const effectiveUser = (isDemo && !user) ? { role: 'admin' } : user;
+  const canEdit = effectiveUser?.role === 'admin';
+  const canDelete = effectiveUser?.role === 'admin';
 
   const handleAdd = () => {
     setEditingContact(null);
@@ -211,6 +253,7 @@ function App() {
       onSetupClick={() => setIsSettingsOpen(true)}
       onUserManagementClick={() => setIsUserManagementOpen(true)}
       isAdmin={canEdit} // canEdit is true for admins
+      user={user}
     >
       {/* Action Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
