@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lock, Mail } from 'lucide-react';
 import logo from '../assets/logo.png';
-import { db, createUserWithEmailAndPassword } from '../lib/firebase';
+import { db, createUserWithEmailAndPassword, sendEmailVerification } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
 export function SetupAdmin({ onSetupComplete }) {
@@ -25,6 +25,9 @@ export function SetupAdmin({ onSetupComplete }) {
     try {
       const userCredential = await createUserWithEmailAndPassword(email, password);
       const user = userCredential.user;
+
+      // Send verification email
+      await sendEmailVerification(user);
 
       // Create admin user document
       await setDoc(doc(db, 'users', user.uid), {

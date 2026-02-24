@@ -37,25 +37,28 @@ service cloud.firestore {
     // Helper function to check if user is admin
     function isAdmin() {
       return request.auth != null &&
+             request.auth.token.email_verified == true &&
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Helper function to check if user is authenticated
-    function isAuth() {
-      return request.auth != null;
+    // Helper function to check if user is registered and verified
+    function isRegistered() {
+      return request.auth != null &&
+             request.auth.token.email_verified == true &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // Contacts: Readable by authenticated users. Writable by admins.
+    // Contacts: Readable and Creatable by registered users. Writable by admins.
     match /contacts/{contactId} {
-      allow read: if isAuth();
-      allow create: if isAuth();
+      allow read, create: if isRegistered();
       allow update, delete: if isAdmin();
     }
 
     // Users Collection:
     match /users/{userId} {
-      allow read: if isAuth();
+      // Allow reading own profile (even if not verified) or if admin.
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       // Allow creation if it's their own document (first run setup or signup)
       allow create: if request.auth != null && request.auth.uid == userId;
       // Only admins can update roles or delete users
@@ -63,9 +66,28 @@ service cloud.firestore {
     }
 
     // Invites Collection:
+    // Only allow reading if the invite belongs to the user (by email) OR if the user is an admin.
     match /invites/{inviteId} {
-      allow read: if isAuth();
-      allow create, update, delete: if isAdmin();
+      allow read: if isAdmin() || (request.auth != null && request.auth.token.email == resource.data.email);
+      allow create, delete: if isAdmin();
+      // Allow users to accept their own invite but not change other fields
+      allow update: if isAdmin() || (
+        request.auth != null &&
+        request.auth.token.email == resource.data.email &&
+        request.resource.data.status == 'accepted' &&
+        resource.data.status == 'pending' &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.email == resource.data.email
+      );
+    }
+
+    // System Collection: Used for public metadata like "Setup Complete"
+    match /system/{docId} {
+      allow read: if true;
+      // Allow creating the setup doc if it doesn't exist (First Run)
+      allow create: if docId == 'setup' && !exists(/databases/$(database)/documents/system/setup);
+      // Allow updating only by admins
+      allow update, delete: if isAdmin();
     }
   }
 }
