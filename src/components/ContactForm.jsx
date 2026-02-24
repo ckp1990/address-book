@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
+import { validatePhone } from '../lib/validation';
 
 export function ContactForm({ isOpen, onClose, onSubmit, initialData = null }) {
     const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ export function ContactForm({ isOpen, onClose, onSubmit, initialData = null }) {
         pincode: ''
     });
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (initialData) {
@@ -42,6 +44,18 @@ export function ContactForm({ isOpen, onClose, onSubmit, initialData = null }) {
 
     async function handleSubmit(e) {
         e.preventDefault();
+
+        const newErrors = {};
+        if (!validatePhone(formData.phone)) {
+            newErrors.phone = 'Invalid phone number format';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        setErrors({});
         setLoading(true);
         try {
             await onSubmit(formData);
@@ -84,11 +98,21 @@ export function ContactForm({ isOpen, onClose, onSubmit, initialData = null }) {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                             <input
                                 type="tel"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all ${
+                                    errors.phone
+                                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                }`}
                                 value={formData.phone}
-                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                onChange={e => {
+                                    setFormData({ ...formData, phone: e.target.value });
+                                    if (errors.phone) setErrors({ ...errors, phone: null });
+                                }}
                                 placeholder="+1 (555) 000-0000"
                             />
+                            {errors.phone && (
+                                <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
+                            )}
                         </div>
 
                         <div>
