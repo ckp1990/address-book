@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Search, Loader2, Users, Printer, Settings, Eye, X } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { Layout } from './components/Layout';
@@ -79,14 +79,7 @@ function App() {
     return () => unsubscribe();
   }, [isDemo]);
 
-  const printComponentRef = useRef();
-
-  const handlePrint = useReactToPrint({
-    contentRef: printComponentRef,
-    documentTitle: 'Contact-Labels',
-    onAfterPrint: useCallback(() => setIsPreviewOpen(false), []),
-  });
-
+  // HOOKS MUST BE CALLED UNCONDITIONALLY - MOVED UP
   const filteredContacts = useMemo(() => contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.phone?.includes(searchQuery)
@@ -126,6 +119,33 @@ function App() {
     }
     setUser(null);
   };
+
+  const handleAdd = useCallback(() => {
+    setEditingContact(null);
+    setIsFormOpen(true);
+  }, []);
+
+  const handleEdit = useCallback((contact) => {
+    setEditingContact(contact);
+    setIsFormOpen(true);
+  }, []);
+
+  const handleSubmit = useCallback(async (data) => {
+    if (editingContact) {
+      await updateContact(editingContact.id, data);
+    } else {
+      await addContact(data);
+    }
+  }, [editingContact, updateContact, addContact]);
+
+  const printComponentRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    contentRef: printComponentRef,
+    documentTitle: 'Contact-Labels',
+    onAfterPrint: useCallback(() => setIsPreviewOpen(false), []),
+  });
+
 
   if (contactsLoading || authLoading) {
     return (
@@ -188,24 +208,6 @@ function App() {
   const effectiveUser = isDemo ? { role: 'admin' } : user;
   const canEdit = effectiveUser.role === 'admin';
   const canDelete = effectiveUser.role === 'admin';
-
-  const handleAdd = useCallback(() => {
-    setEditingContact(null);
-    setIsFormOpen(true);
-  }, []);
-
-  const handleEdit = useCallback((contact) => {
-    setEditingContact(contact);
-    setIsFormOpen(true);
-  }, []);
-
-  const handleSubmit = useCallback(async (data) => {
-    if (editingContact) {
-      await updateContact(editingContact.id, data);
-    } else {
-      await addContact(data);
-    }
-  }, [editingContact, updateContact, addContact]);
 
   return (
     <Layout
