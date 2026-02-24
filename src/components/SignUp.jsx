@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Lock, Mail } from 'lucide-react';
+import { Lock, Mail, Settings } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { db, createUserWithEmailAndPassword, sendEmailVerification } from '../lib/firebase';
 import { collection, query, where, getDocs, setDoc, doc, updateDoc } from 'firebase/firestore';
+import { SettingsModal } from './SettingsModal';
 
 export function SignUp({ onBackToLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -65,6 +67,8 @@ export function SignUp({ onBackToLogin }) {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {
         setError('An account with this email already exists.');
+      } else if (err.code === 'auth/api-key-not-valid') {
+        setError('Invalid API Key. Please check your Database Settings.');
       } else {
         setError(err.message || 'Failed to create account');
       }
@@ -104,6 +108,16 @@ export function SignUp({ onBackToLogin }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="p-2 text-gray-400 hover:text-gray-500 focus:outline-none"
+          title="Database Settings"
+        >
+          <Settings className="h-6 w-6" />
+        </button>
+      </div>
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <img src={logo} alt="Logo" className="w-20 h-20 rounded-xl object-contain" />
@@ -228,6 +242,7 @@ export function SignUp({ onBackToLogin }) {
           </div>
         </div>
       </div>
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }
