@@ -27,6 +27,8 @@ Follow these steps to generate the Windows installer file.
     ```bash
     npm run electron:build
     ```
+    *Note: If you are running this command on Windows, it will generate an `.exe`. If you are on Linux/Mac, it may generate a different format unless you configure cross-compilation.*
+
 4.  **Locate the Installer:**
     Once the process finishes (it may take a few minutes), navigate to the `dist-electron` folder inside your project directory.
     *   You will see a file named something like `Address Label Printer Setup 1.0.0.exe`.
