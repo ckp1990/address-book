@@ -1,7 +1,14 @@
 import { AlertTriangle, Database } from 'lucide-react';
+import { StorageAdapter } from '../lib/storage-adapter';
 
 export function ConnectionBanner({ isDemo, onSetupClick }) {
     if (!isDemo) return null;
+
+    const isElectron = StorageAdapter.isElectron();
+    const title = isElectron ? "Local Database Active" : "Demo Mode Active";
+    const message = isElectron
+        ? "Data is saved to your computer. Connect Firebase to sync with the cloud."
+        : "Data is saved to your browser (Local Storage). Connect Firebase to save to the cloud.";
 
     return (
         <div className="bg-indigo-50 border-b border-indigo-100 p-4">
@@ -11,9 +18,9 @@ export function ConnectionBanner({ isDemo, onSetupClick }) {
                         <Database size={20} />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-indigo-900">Demo Mode Active</h3>
+                        <h3 className="font-semibold text-indigo-900">{title}</h3>
                         <p className="text-sm text-indigo-700">
-                            Data is saved to your browser (Local Storage). Connect Firebase to save to the cloud.
+                            {message}
                         </p>
                     </div>
                 </div>
