@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db, ensureAuth } from './firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { StorageAdapter } from './storage-adapter';
 
 /**
  * Custom hook to manage contacts.
- * Automatically switches between LocalStorage (Demo) and Firebase (Prod).
+ * Automatically switches between LocalStorage/FileStorage (Local Mode) and Firebase (Cloud Mode).
  */
 export function useContacts(userId) {
     const [contacts, setContacts] = useState([]);
@@ -12,24 +13,30 @@ export function useContacts(userId) {
     const [error, setError] = useState(null);
     const isDemo = !db;
 
+    // Persist contacts to local storage/file whenever they change (local mirror)
     useEffect(() => {
-        if (isDemo && !loading) {
-            localStorage.setItem('demo_contacts', JSON.stringify(contacts));
+        if (!loading) {
+            StorageAdapter.save('demo_contacts', contacts);
         }
-    }, [contacts, isDemo, loading]);
+    }, [contacts, loading]);
 
     useEffect(() => {
         async function fetchContacts() {
             setLoading(true);
             try {
-                if (isDemo) {
-                    // Load from LocalStorage
-                    const localData = JSON.parse(localStorage.getItem('demo_contacts') || '[]');
+                // Always attempt to load from local storage/file first (offline/cache)
+                const localData = await StorageAdapter.load('demo_contacts');
+                if (localData && Array.isArray(localData)) {
                     setContacts(localData);
+                }
+
+                if (isDemo) {
+                    // In Local Mode, we are done (data loaded from local storage)
                 } else {
-                    // Load from Firebase
+                    // In Cloud Mode, attempt to sync with Firebase
                     const user = await ensureAuth();
                     if (!user) {
+                        // If not authenticated in Cloud Mode, clear contacts for security
                         setContacts([]);
                         setLoading(false);
                         return;
@@ -37,27 +44,37 @@ export function useContacts(userId) {
                     const contactsRef = collection(db, 'contacts');
 
                     try {
-                        const q = query(contactsRef, orderBy('created_at', 'desc'));
-                        const querySnapshot = await getDocs(q);
-                        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        let data = [];
+                        try {
+                            const q = query(contactsRef, orderBy('created_at', 'desc'));
+                            const querySnapshot = await getDocs(q);
+                            data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        } catch (idxError) {
+                            console.warn("Index missing or error, fetching without sort:", idxError);
+                            const querySnapshot = await getDocs(contactsRef);
+                            data = querySnapshot.docs
+                                .map(doc => {
+                                    const d = doc.data();
+                                    return {
+                                        id: doc.id,
+                                        ...d,
+                                        _sortTime: new Date(d.created_at).getTime()
+                                    };
+                                })
+                                .sort((a, b) => b._sortTime - a._sortTime)
+                                .map(({ _sortTime, ...rest }) => rest);
+                        }
+
+                        // Update state with cloud data
                         setContacts(data);
-                    } catch (idxError) {
-                        console.warn("Index missing or error, fetching without sort:", idxError);
-                        // Fallback to unsorted fetch
-                        const querySnapshot = await getDocs(contactsRef);
-                        // Client-side sort with Schwartzian transform for performance
-                        const data = querySnapshot.docs
-                            .map(doc => {
-                                const d = doc.data();
-                                return {
-                                    id: doc.id,
-                                    ...d,
-                                    _sortTime: new Date(d.created_at).getTime()
-                                };
-                            })
-                            .sort((a, b) => b._sortTime - a._sortTime)
-                            .map(({ _sortTime, ...rest }) => rest);
-                        setContacts(data);
+                        // Sync cloud data to local storage/file
+                        await StorageAdapter.save('demo_contacts', data);
+
+                    } catch (firestoreError) {
+                        console.error("Firestore fetch failed, using local cache:", firestoreError);
+                        // If Firestore fails (e.g. offline), we keep the local data we loaded earlier
+                        // Optionally set an error to inform the user
+                        // setError("Offline mode: Using cached data.");
                     }
                 }
             } catch (err) {
@@ -84,12 +101,14 @@ export function useContacts(userId) {
                     ...newContactData
                 };
                 setContacts(prev => [newContact, ...prev]);
+                // Persistence handled by useEffect
                 return newContact;
             } else {
                 await ensureAuth();
                 const docRef = await addDoc(collection(db, 'contacts'), newContactData);
                 const savedContact = { id: docRef.id, ...newContactData };
                 setContacts(prev => [savedContact, ...prev]);
+                // Persistence handled by useEffect
                 return savedContact;
             }
         } catch (err) {

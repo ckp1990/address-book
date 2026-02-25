@@ -212,9 +212,9 @@ function App() {
   return (
     <Layout
       isDemo={isDemo}
-      onLogout={handleLogout}
+      onLogout={!isDemo ? handleLogout : undefined}
       onSetupClick={() => setIsSettingsOpen(true)}
-      onUserManagementClick={() => setIsUserManagementOpen(true)}
+      onUserManagementClick={!isDemo ? () => setIsUserManagementOpen(true) : undefined}
       isAdmin={canEdit} // canEdit is true for admins
     >
       {/* Action Bar */}
