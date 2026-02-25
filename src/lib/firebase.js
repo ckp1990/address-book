@@ -102,16 +102,23 @@ export async function ensureAuth() {
  * Saves Firebase configuration to LocalStorage and reloads the page.
  */
 export function saveFirebaseConfig(config) {
-    if (!config.apiKey || !config.projectId || !config.appId) {
+    const apiKey = (config.apiKey || '').trim();
+    const projectId = (config.projectId || '').trim();
+    const appId = (config.appId || '').trim();
+    const authDomain = (config.authDomain || '').trim();
+    const storageBucket = (config.storageBucket || '').trim();
+    const messagingSenderId = (config.messagingSenderId || '').trim();
+
+    if (!apiKey || !projectId || !appId) {
         throw new Error("API Key, Project ID, and App ID are required.");
     }
-    localStorage.setItem('firebase_api_key', config.apiKey);
-    localStorage.setItem('firebase_project_id', config.projectId);
-    localStorage.setItem('firebase_app_id', config.appId);
+    localStorage.setItem('firebase_api_key', apiKey);
+    localStorage.setItem('firebase_project_id', projectId);
+    localStorage.setItem('firebase_app_id', appId);
 
-    if (config.authDomain) localStorage.setItem('firebase_auth_domain', config.authDomain);
-    if (config.storageBucket) localStorage.setItem('firebase_storage_bucket', config.storageBucket);
-    if (config.messagingSenderId) localStorage.setItem('firebase_messaging_sender_id', config.messagingSenderId);
+    if (authDomain) localStorage.setItem('firebase_auth_domain', authDomain);
+    if (storageBucket) localStorage.setItem('firebase_storage_bucket', storageBucket);
+    if (messagingSenderId) localStorage.setItem('firebase_messaging_sender_id', messagingSenderId);
 
     window.location.reload();
 }
