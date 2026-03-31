@@ -53,16 +53,12 @@ export function useContacts(userId) {
                             console.warn("Index missing or error, fetching without sort:", idxError);
                             const querySnapshot = await getDocs(contactsRef);
                             data = querySnapshot.docs
-                                .map(doc => {
-                                    const d = doc.data();
-                                    return {
-                                        id: doc.id,
-                                        ...d,
-                                        _sortTime: new Date(d.created_at).getTime()
-                                    };
-                                })
-                                .sort((a, b) => b._sortTime - a._sortTime)
-                                .map(({ _sortTime, ...rest }) => rest);
+                                .map(doc => ({ id: doc.id, ...doc.data() }))
+                                .sort((a, b) => {
+                                    if (a.created_at < b.created_at) return 1;
+                                    if (a.created_at > b.created_at) return -1;
+                                    return 0;
+                                });
                         }
 
                         // Update state with cloud data
