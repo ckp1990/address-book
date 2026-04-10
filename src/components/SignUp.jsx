@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Lock, Mail, Settings } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { db, createUserWithEmailAndPassword, sendEmailVerification } from '../lib/firebase';
-import { collection, query, where, getDocs, setDoc, doc, updateDoc } from 'firebase/firestore';
+import { getDoc, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { SettingsModal } from './SettingsModal';
 
 export function SignUp({ onBackToLogin }) {
@@ -32,17 +32,16 @@ export function SignUp({ onBackToLogin }) {
       const user = userCredential.user;
 
       // 2. Verify Invitation
-      const invitesRef = collection(db, 'invites');
-      const q = query(invitesRef, where('email', '==', email), where('status', '==', 'pending'));
-      const querySnapshot = await getDocs(q);
+      const lowerEmail = email.toLowerCase();
+      const inviteDocRef = doc(db, 'invites', lowerEmail);
+      const inviteDoc = await getDoc(inviteDocRef);
 
-      if (querySnapshot.empty) {
-        // Cleanup: Delete the auth user if no invite found
+      if (!inviteDoc.exists() || inviteDoc.data().status !== 'pending') {
+        // Cleanup: Delete the auth user if no invite found or if it's already used
         await user.delete();
-        throw new Error('This email has not been invited. Please ask an administrator for an invitation.');
+        throw new Error('This email has not been invited or the invitation has already been used.');
       }
 
-      const inviteDoc = querySnapshot.docs[0];
       const inviteData = inviteDoc.data();
 
       // 3. Send Verification Email
@@ -50,13 +49,13 @@ export function SignUp({ onBackToLogin }) {
 
       // 4. Create User Profile
       await setDoc(doc(db, 'users', user.uid), {
-        email: user.email,
+        email: lowerEmail,
         role: inviteData.role,
         createdAt: new Date().toISOString()
       });
 
       // 5. Mark Invite as Accepted
-      await updateDoc(doc(db, 'invites', inviteDoc.id), {
+      await updateDoc(inviteDocRef, {
         status: 'accepted',
         acceptedAt: new Date().toISOString(),
         userId: user.uid

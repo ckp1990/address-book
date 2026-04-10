@@ -28,25 +28,35 @@ service cloud.firestore {
       // Allow reading own profile (even if not verified) or if admin.
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       // Allow creation if it's their own document (first run setup or signup)
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId && (
+        // Case 1: First-time admin setup (system/setup doc doesn't exist yet)
+        (!exists(/databases/$(database)/documents/system/setup) && request.resource.data.role == 'admin') ||
+        // Case 2: Regular signup (must have a valid pending invite)
+        (
+          exists(/databases/$(database)/documents/invites/$(request.auth.token.email.lower())) &&
+          get(/databases/$(database)/documents/invites/$(request.auth.token.email.lower())).data.status == 'pending' &&
+          get(/databases/$(database)/documents/invites/$(request.auth.token.email.lower())).data.role == request.resource.data.role &&
+          request.resource.data.email == request.auth.token.email.lower()
+        )
+      );
       // Only admins can update roles or delete users
       allow update, delete: if isAdmin();
     }
 
     // Invites Collection:
     // Only allow reading if the invite belongs to the user (by email) OR if the user is an admin.
-    match /invites/{inviteId} {
-      allow read: if isAdmin() || (request.auth != null && request.auth.token.email == resource.data.email);
+    match /invites/{email} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.token.email.lower() == email);
       allow create, delete: if isAdmin();
       // Allow users to accept their own invite but not change other fields
       allow update: if isAdmin() || (
         request.auth != null &&
-        request.auth.token.email == resource.data.email &&
+        request.auth.token.email.lower() == email &&
         request.resource.data.status == 'accepted' &&
         resource.data.status == 'pending' &&
         request.resource.data.role == resource.data.role &&
         request.resource.data.email == resource.data.email
-      );
+      )
     }
 
     // System Collection: Used for public metadata like "Setup Complete"
