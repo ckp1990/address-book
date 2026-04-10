@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Mail, Shield, User, Trash2 } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, query, where, getDocs, getCountFromServer } from 'firebase/firestore';
+import { collection, setDoc, doc, query, where, getDocs, getCountFromServer } from 'firebase/firestore';
 
 export function UserManagement({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
@@ -64,6 +64,8 @@ export function UserManagement({ isOpen, onClose }) {
     setSuccess('');
     setLoading(true);
 
+    const lowerEmail = email.toLowerCase();
+
     try {
       const invitesRef = collection(db, 'invites');
       const usersRef = collection(db, 'users');
@@ -82,28 +84,28 @@ export function UserManagement({ isOpen, onClose }) {
       }
 
       // Check if email already invited
-      const emailQuery = query(invitesRef, where('email', '==', email));
+      const emailQuery = query(invitesRef, where('email', '==', lowerEmail));
       const emailSnapshot = await getDocs(emailQuery);
       if (!emailSnapshot.empty) {
         throw new Error('This email has already been invited.');
       }
 
       // Check if email already registered
-      const userEmailQuery = query(usersRef, where('email', '==', email));
+      const userEmailQuery = query(usersRef, where('email', '==', lowerEmail));
       const userEmailSnapshot = await getDocs(userEmailQuery);
       if (!userEmailSnapshot.empty) {
         throw new Error('User with this email already exists.');
       }
 
       // Create Invite
-      await addDoc(invitesRef, {
-        email,
+      await setDoc(doc(db, 'invites', lowerEmail), {
+        email: lowerEmail,
         role,
         status: 'pending',
         createdAt: new Date().toISOString()
       });
 
-      setSuccess(`Invitation sent to ${email}`);
+      setSuccess(`Invitation sent to ${lowerEmail}`);
       setEmail('');
       fetchInvites(); // Refresh list
 
