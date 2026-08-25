@@ -50,7 +50,6 @@ export function useContacts(userId) {
                             const querySnapshot = await getDocs(q);
                             data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         } catch (idxError) {
-                            console.warn("Index missing or error, fetching without sort:", idxError);
                             const querySnapshot = await getDocs(contactsRef);
                             data = querySnapshot.docs
                                 .map(doc => ({ id: doc.id, ...doc.data() }))
