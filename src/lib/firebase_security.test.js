@@ -4,7 +4,7 @@ import { expect, test, mock, describe, beforeEach } from "bun:test";
 let storage = {
     'firebase_api_key': 'mock-api-key',
     'firebase_project_id': 'mock-project-id',
-    'firebase_app_id': 'mock-app-id',
+    'firebase_app_id': '1:1:web:1',
 };
 global.localStorage = {
     setItem: mock((key, value) => {

@@ -9,27 +9,23 @@ import {
     sendEmailVerification,
     signOut as _signOut
 } from 'firebase/auth';
+import { validateFirebaseConfig } from './validation';
 
 /**
  * Reads Firebase configuration from LocalStorage.
  */
 function getFirebaseConfig() {
-    const apiKey = localStorage.getItem('firebase_api_key');
-    const projectId = localStorage.getItem('firebase_project_id');
-    const appId = localStorage.getItem('firebase_app_id');
-    const authDomain = localStorage.getItem('firebase_auth_domain') || undefined;
-    const storageBucket = localStorage.getItem('firebase_storage_bucket') || undefined;
-    const messagingSenderId = localStorage.getItem('firebase_messaging_sender_id') || undefined;
+    const config = {
+        apiKey: localStorage.getItem('firebase_api_key'),
+        projectId: localStorage.getItem('firebase_project_id'),
+        appId: localStorage.getItem('firebase_app_id'),
+        authDomain: localStorage.getItem('firebase_auth_domain') || undefined,
+        storageBucket: localStorage.getItem('firebase_storage_bucket') || undefined,
+        messagingSenderId: localStorage.getItem('firebase_messaging_sender_id') || undefined
+    };
 
-    if (apiKey && projectId && appId) {
-        return {
-            apiKey,
-            authDomain,
-            projectId,
-            storageBucket,
-            messagingSenderId,
-            appId
-        };
+    if (config.apiKey && config.projectId && config.appId && validateFirebaseConfig(config)) {
+        return config;
     }
     return null;
 }
@@ -112,6 +108,18 @@ export function saveFirebaseConfig(config) {
     if (!apiKey || !projectId || !appId) {
         throw new Error("API Key, Project ID, and App ID are required.");
     }
+
+    if (!validateFirebaseConfig({
+        apiKey,
+        projectId,
+        appId,
+        authDomain,
+        storageBucket,
+        messagingSenderId
+    })) {
+        throw new Error("Invalid Firebase configuration format.");
+    }
+
     localStorage.setItem('firebase_api_key', apiKey);
     localStorage.setItem('firebase_project_id', projectId);
     localStorage.setItem('firebase_app_id', appId);
