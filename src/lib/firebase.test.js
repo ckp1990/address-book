@@ -57,14 +57,14 @@ describe("firebase configuration", () => {
         const config = {
             apiKey: "test-api-key",
             projectId: "test-project-id",
-            appId: "test-app-id",
+            appId: "1:123:web:abc",
         };
 
         saveFirebaseConfig(config);
 
         expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_api_key", "test-api-key");
         expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_project_id", "test-project-id");
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_app_id", "test-app-id");
+        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_app_id", "1:123:web:abc");
         expect(global.window.location.reload).toHaveBeenCalled();
     });
 
@@ -74,17 +74,17 @@ describe("firebase configuration", () => {
         const config = {
             apiKey: "test-api-key",
             projectId: "test-project-id",
-            appId: "test-app-id",
-            authDomain: "test-auth-domain",
-            storageBucket: "test-storage-bucket",
-            messagingSenderId: "test-sender-id",
+            appId: "1:123:web:abc",
+            authDomain: "test.auth.domain",
+            storageBucket: "test.storage.bucket",
+            messagingSenderId: "123456",
         };
 
         saveFirebaseConfig(config);
 
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_auth_domain", "test-auth-domain");
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_storage_bucket", "test-storage-bucket");
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_messaging_sender_id", "test-sender-id");
+        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_auth_domain", "test.auth.domain");
+        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_storage_bucket", "test.storage.bucket");
+        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_messaging_sender_id", "123456");
     });
 
     test("saveFirebaseConfig throws error if required fields are missing", async () => {

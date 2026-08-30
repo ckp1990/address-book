@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { validatePhone } from "./validation";
+import { validatePhone, validateFirebaseConfig } from "./validation";
 
 describe("validatePhone", () => {
     test("validates standard international format", () => {
@@ -40,5 +40,66 @@ describe("validatePhone", () => {
         expect(validatePhone("<script>alert(1)</script>")).toBe(false);
         expect(validatePhone("javascript:alert(1)")).toBe(false);
         expect(validatePhone("' OR '1'='1")).toBe(false);
+    });
+});
+
+describe("validateFirebaseConfig", () => {
+    const validConfig = {
+        apiKey: "AIzaSyAs-7EXAMPLE-88-8888888888888888",
+        projectId: "my-project-123",
+        appId: "1:1234567890:web:abcdef1234567890",
+        authDomain: "my-project-123.firebaseapp.com",
+        storageBucket: "my-project-123.appspot.com",
+        messagingSenderId: "1234567890"
+    };
+
+    test("validates a correct configuration", () => {
+        expect(validateFirebaseConfig(validConfig)).toBe(true);
+    });
+
+    test("validates a minimal correct configuration", () => {
+        const minimalConfig = {
+            apiKey: "valid-key",
+            projectId: "valid-id",
+            appId: "1:123:web:abc"
+        };
+        expect(validateFirebaseConfig(minimalConfig)).toBe(true);
+    });
+
+    test("rejects invalid apiKey", () => {
+        expect(validateFirebaseConfig({ ...validConfig, apiKey: "invalid key!" })).toBe(false);
+        expect(validateFirebaseConfig({ ...validConfig, apiKey: "<script>" })).toBe(false);
+    });
+
+    test("rejects invalid projectId", () => {
+        expect(validateFirebaseConfig({ ...validConfig, projectId: "Invalid_ID" })).toBe(false);
+        expect(validateFirebaseConfig({ ...validConfig, projectId: "project.id" })).toBe(false);
+    });
+
+    test("rejects invalid appId", () => {
+        expect(validateFirebaseConfig({ ...validConfig, appId: "invalid-app-id" })).toBe(false);
+        expect(validateFirebaseConfig({ ...validConfig, appId: "1:123:android:abc" })).toBe(false);
+    });
+
+    test("rejects invalid authDomain", () => {
+        expect(validateFirebaseConfig({ ...validConfig, authDomain: "invalid domain" })).toBe(false);
+    });
+
+    test("rejects invalid storageBucket", () => {
+        expect(validateFirebaseConfig({ ...validConfig, storageBucket: "s3://bucket" })).toBe(false);
+    });
+
+    test("rejects invalid messagingSenderId", () => {
+        expect(validateFirebaseConfig({ ...validConfig, messagingSenderId: "abc123" })).toBe(false);
+    });
+
+    test("handles empty optional fields", () => {
+        const configWithEmpty = {
+            ...validConfig,
+            authDomain: "",
+            storageBucket: null,
+            messagingSenderId: undefined
+        };
+        expect(validateFirebaseConfig(configWithEmpty)).toBe(true);
     });
 });
