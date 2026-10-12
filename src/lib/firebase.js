@@ -9,26 +9,51 @@ import {
     sendEmailVerification,
     signOut as _signOut
 } from 'firebase/auth';
+import { obfuscate, deobfuscate } from './crypto';
+
+const OBF_PREFIX = 'obf:';
+
+/**
+ * Reads and deobfuscates a value from LocalStorage.
+ * Supports legacy plaintext values.
+ */
+function getSavedItem(key) {
+    const value = localStorage.getItem(key);
+    if (!value) return null;
+    if (value.startsWith(OBF_PREFIX)) {
+        return deobfuscate(value.substring(OBF_PREFIX.length));
+    }
+    return value; // Return as-is for legacy plaintext
+}
+
+/**
+ * Retrieves the saved Firebase configuration, handling deobfuscation.
+ */
+export function getSavedConfig() {
+    return {
+        apiKey: getSavedItem('firebase_api_key') || '',
+        projectId: getSavedItem('firebase_project_id') || '',
+        appId: getSavedItem('firebase_app_id') || '',
+        authDomain: getSavedItem('firebase_auth_domain') || '',
+        storageBucket: getSavedItem('firebase_storage_bucket') || '',
+        messagingSenderId: getSavedItem('firebase_messaging_sender_id') || ''
+    };
+}
 
 /**
  * Reads Firebase configuration from LocalStorage.
  */
 function getFirebaseConfig() {
-    const apiKey = localStorage.getItem('firebase_api_key');
-    const projectId = localStorage.getItem('firebase_project_id');
-    const appId = localStorage.getItem('firebase_app_id');
-    const authDomain = localStorage.getItem('firebase_auth_domain') || undefined;
-    const storageBucket = localStorage.getItem('firebase_storage_bucket') || undefined;
-    const messagingSenderId = localStorage.getItem('firebase_messaging_sender_id') || undefined;
+    const config = getSavedConfig();
 
-    if (apiKey && projectId && appId) {
+    if (config.apiKey && config.projectId && config.appId) {
         return {
-            apiKey,
-            authDomain,
-            projectId,
-            storageBucket,
-            messagingSenderId,
-            appId
+            apiKey: config.apiKey,
+            authDomain: config.authDomain || undefined,
+            projectId: config.projectId,
+            storageBucket: config.storageBucket || undefined,
+            messagingSenderId: config.messagingSenderId || undefined,
+            appId: config.appId
         };
     }
     return null;
@@ -112,13 +137,21 @@ export function saveFirebaseConfig(config) {
     if (!apiKey || !projectId || !appId) {
         throw new Error("API Key, Project ID, and App ID are required.");
     }
-    localStorage.setItem('firebase_api_key', apiKey);
-    localStorage.setItem('firebase_project_id', projectId);
-    localStorage.setItem('firebase_app_id', appId);
 
-    if (authDomain) localStorage.setItem('firebase_auth_domain', authDomain);
-    if (storageBucket) localStorage.setItem('firebase_storage_bucket', storageBucket);
-    if (messagingSenderId) localStorage.setItem('firebase_messaging_sender_id', messagingSenderId);
+    const save = (key, val) => {
+        if (val) {
+            localStorage.setItem(key, OBF_PREFIX + obfuscate(val));
+        } else {
+            localStorage.removeItem(key);
+        }
+    };
+
+    save('firebase_api_key', apiKey);
+    save('firebase_project_id', projectId);
+    save('firebase_app_id', appId);
+    save('firebase_auth_domain', authDomain);
+    save('firebase_storage_bucket', storageBucket);
+    save('firebase_messaging_sender_id', messagingSenderId);
 
     window.location.reload();
 }

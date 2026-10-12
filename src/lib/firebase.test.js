@@ -51,7 +51,7 @@ describe("firebase configuration", () => {
         global.window.location.reload.mockClear();
     });
 
-    test("saveFirebaseConfig saves to localStorage and reloads", async () => {
+    test("saveFirebaseConfig saves obfuscated values to localStorage and reloads", async () => {
         const { saveFirebaseConfig } = await import("./firebase");
 
         const config = {
@@ -62,13 +62,14 @@ describe("firebase configuration", () => {
 
         saveFirebaseConfig(config);
 
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_api_key", "test-api-key");
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_project_id", "test-project-id");
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_app_id", "test-app-id");
+        // Should start with 'obf:'
+        expect(global.localStorage.setItem.mock.calls.some(call => call[0] === "firebase_api_key" && call[1].startsWith("obf:"))).toBe(true);
+        expect(global.localStorage.setItem.mock.calls.some(call => call[0] === "firebase_project_id" && call[1].startsWith("obf:"))).toBe(true);
+        expect(global.localStorage.setItem.mock.calls.some(call => call[0] === "firebase_app_id" && call[1].startsWith("obf:"))).toBe(true);
         expect(global.window.location.reload).toHaveBeenCalled();
     });
 
-    test("saveFirebaseConfig saves optional fields", async () => {
+    test("saveFirebaseConfig saves optional fields obfuscated", async () => {
         const { saveFirebaseConfig } = await import("./firebase");
 
         const config = {
@@ -82,9 +83,35 @@ describe("firebase configuration", () => {
 
         saveFirebaseConfig(config);
 
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_auth_domain", "test-auth-domain");
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_storage_bucket", "test-storage-bucket");
-        expect(global.localStorage.setItem).toHaveBeenCalledWith("firebase_messaging_sender_id", "test-sender-id");
+        expect(global.localStorage.setItem.mock.calls.some(call => call[0] === "firebase_auth_domain" && call[1].startsWith("obf:"))).toBe(true);
+        expect(global.localStorage.setItem.mock.calls.some(call => call[0] === "firebase_storage_bucket" && call[1].startsWith("obf:"))).toBe(true);
+        expect(global.localStorage.setItem.mock.calls.some(call => call[0] === "firebase_messaging_sender_id" && call[1].startsWith("obf:"))).toBe(true);
+    });
+
+    test("getSavedConfig deobfuscates values correctly", async () => {
+        const { saveFirebaseConfig, getSavedConfig } = await import("./firebase");
+
+        const config = {
+            apiKey: "test-api-key",
+            projectId: "test-project-id",
+            appId: "test-app-id",
+        };
+
+        saveFirebaseConfig(config);
+        const saved = getSavedConfig();
+
+        expect(saved.apiKey).toBe("test-api-key");
+        expect(saved.projectId).toBe("test-project-id");
+        expect(saved.appId).toBe("test-app-id");
+    });
+
+    test("getSavedConfig handles legacy plaintext values", async () => {
+        const { getSavedConfig } = await import("./firebase");
+
+        storage['firebase_api_key'] = 'plaintext-key';
+
+        const saved = getSavedConfig();
+        expect(saved.apiKey).toBe('plaintext-key');
     });
 
     test("saveFirebaseConfig throws error if required fields are missing", async () => {

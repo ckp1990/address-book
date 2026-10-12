@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save, RotateCcw, Database } from 'lucide-react';
-import { saveFirebaseConfig, clearFirebaseConfig, isFirebaseConfigured } from '../lib/firebase';
+import { saveFirebaseConfig, clearFirebaseConfig, isFirebaseConfigured, getSavedConfig } from '../lib/firebase';
 
 export function SettingsModal({ isOpen, onClose }) {
   const [apiKey, setApiKey] = useState('');
@@ -14,13 +14,13 @@ export function SettingsModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setApiKey(localStorage.getItem('firebase_api_key') || '');
-      setProjectId(localStorage.getItem('firebase_project_id') || '');
-      setAppId(localStorage.getItem('firebase_app_id') || '');
-      setAuthDomain(localStorage.getItem('firebase_auth_domain') || '');
-      setStorageBucket(localStorage.getItem('firebase_storage_bucket') || '');
-      setMessagingSenderId(localStorage.getItem('firebase_messaging_sender_id') || '');
+      const config = getSavedConfig();
+      setApiKey(config.apiKey);
+      setProjectId(config.projectId);
+      setAppId(config.appId);
+      setAuthDomain(config.authDomain);
+      setStorageBucket(config.storageBucket);
+      setMessagingSenderId(config.messagingSenderId);
 
       setIsConfigured(isFirebaseConfigured());
     }
